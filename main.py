@@ -201,7 +201,7 @@ class PromptApp:
         style = ttk.Style()
         style.configure("Treeview", font=(textfont, fontsize_treeview))  # ツリービューのスタイル設定
 
-        # 左右ペインを分割するためのPanedWindowを作成
+        # 左右ペインを分割するためのPanedWindow
         self.paned_window = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, sashwidth=10)
         self.paned_window.pack(fill=tk.BOTH, expand=True)
 
@@ -302,11 +302,11 @@ class PromptApp:
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_top.config(font=(textfont, fontsize_textbox))
 
-        # 右ペインの下部フレーム (テキストボックスと「クリア」ボタン)
+        # 右ペインの下部フレーム (テキストボックスと「クリア」ボタン等)
         self.right_frame_bottom = tk.Frame(self.right_frame)
         self.right_frame.add(self.right_frame_bottom)
 
-        # 新しいフレームを作成してボタンを縦に配置
+        # 下部フレームに脇にボタンを縦に配置するためのフレーム
         self.button_vertical_frame = tk.Frame(self.right_frame_bottom)
         self.button_vertical_frame.pack(side=tk.LEFT, padx=5)
 
@@ -314,11 +314,11 @@ class PromptApp:
         self.list_button = tk.Button(self.button_vertical_frame, text=messages[lang]['list'], width=self.button_width1, command=self.on_list_button_click)
         self.list_button.pack(side=tk.TOP, pady=(5, 0))
 
-        # ロードボタンの追加
+        # 「ロード」ボタンの追加
         self.load_button = tk.Button(self.button_vertical_frame, text=messages[lang]['load'], width=self.button_width1, command=self.on_load_button_click)
         self.load_button.pack(side=tk.TOP, pady=(5, 0))
 
-        # セーブボタンの追加
+        # 「セーブ」ボタンの追加
         self.save_button = tk.Button(self.button_vertical_frame, text=messages[lang]['save'], width=self.button_width1, command=self.on_save_button_click)
         self.save_button.pack(side=tk.TOP, pady=(5, 0))
 
@@ -330,7 +330,7 @@ class PromptApp:
         self.shuffle_button = tk.Button(self.button_vertical_frame, text=messages[lang]['shuffle'], width=self.button_width1, command=self.on_shuffle_button_click)
         self.shuffle_button.pack(side=tk.TOP, pady=(5, 0))
 
-        # ロックチェックボックスとラベル
+        # 「ロック」チェックボックスとラベル
         self.lock_var = tk.BooleanVar(value=False)  # ロック状態を管理する変数
         self.lock_checkbox = tk.Checkbutton(self.button_vertical_frame, text=messages[lang]['check_lock'], variable=self.lock_var, command=self.toggle_lock)
         self.lock_checkbox.pack(side=tk.TOP, pady=(60, 0))  # 上方向、間隔を少し広めに取る
@@ -339,23 +339,23 @@ class PromptApp:
         self.clear_button = tk.Button(self.button_vertical_frame, text=messages[lang]['clear'], width=self.button_width1, command=self.on_clear_button_click)
         self.clear_button.pack(side=tk.TOP, pady=(5, 0))
 
-        # 下部テキストボックス
+        # 下部テキストボックス(プロンプト欄)
         self.text_box_bottom = tk.Text(self.right_frame_bottom, height=10)
         self.text_box_bottom.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_bottom.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_bottom.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
 
-        # JSON自動保存設定のチェックボックス
-        self.autosave_json_var = tk.BooleanVar(value=autosave_json_enabled)
-
-        # チェックボックスとボタンを配置するフレーム
+        # JSON保存関連のチェックボックスとボタンを配置するフレーム
         self.json_options_frame = tk.Frame(self.left_frame)
         self.json_options_frame.pack(side=tk.BOTTOM, pady=5)
+
+        # 「辞書オートセーブ」設定のチェックボックス
+        self.autosave_json_var = tk.BooleanVar(value=autosave_json_enabled)
 
         self.autosave_json_checkbox = tk.Checkbutton(self.json_options_frame, text=messages[lang]['check_autosave_json'], variable=self.autosave_json_var, command=self.toggle_autosave_json)
         self.autosave_json_checkbox.pack(side=tk.LEFT)
 
-        # JSON保存ボタン
+        # 「辞書セーブ」ボタン
         self.save_json_button = tk.Button(self.json_options_frame, text=messages[lang]['save_json'], width=10, command=self.save_dicts_to_json)
         self.save_json_button.pack(side=tk.RIGHT, padx=15)
 
@@ -1227,6 +1227,9 @@ class PromptApp:
             else:
                 return
         else:
+            # 終了時も辞書ファイル保存
+            self.save_dicts_to_json()
+
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
             self.root.destroy()
