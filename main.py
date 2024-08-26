@@ -18,16 +18,16 @@ settings_path = os.path.join(os.path.dirname(sys.argv[0]), 'settings.ini')
 if not os.path.exists(settings_path):
     config['Settings'] = {
         'lang': 'en', 
-        'increment_unit': '0.05', 
+        'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
         'window_width': '1000',  # 初期ウィンドウ幅
         'window_height': '600',   # 初期ウィンドウ高さ
         'messages': 'enable',  # メッセージの表示(enable)と抑止(disable)
         'autosave_json': 'disable',  # JSON辞書ファイルの自動保存設定
         'backup_json': 'enable',  # アプリ起動時にJSON辞書ファイルを自動バックアップする設定
-        'textfont': 'TkDefaultFont',
-        'fontsize_treeview': '12',
-        'fontsize_textbox': '12',
-        'datetime_format': '%%Y%%m%%d_%%H%%M%%S',
+        'textfont': 'TkDefaultFont',  # TkDefaultFontはTkinterのデフォルトシステムフォント
+        'fontsize_treeview': '12',  # ツリー表示のフォントサイズ
+        'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
+        'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
         }
     with open(settings_path, 'w') as configfile:
         config.write(configfile)
@@ -38,12 +38,12 @@ else:
 lang = config['Settings']['lang']
 if lang not in ['en', 'ja']:
     messagebox.showerror("Configuration Error", "Invalid value set for 'lang'. \nIt must be 'en' or 'ja'.")
-    sys.exit(1)  # Exit the program
+    sys.exit(1)
 
 increment_unit = float(config['Settings'].get('increment_unit', '0.1'))
 if increment_unit not in [0.05, 0.1]:
     messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
-    sys.exit(1)  # Exit the program
+    sys.exit(1)
 
 # textfontのチェックはstartメソッドで実施(理由もそちらに記載)
 textfont = config['Settings']['textfont']
@@ -51,12 +51,12 @@ textfont = config['Settings']['textfont']
 fontsize_textbox = int((config['Settings'].get('fontsize_textbox', '12')))
 if not 8 <= fontsize_textbox <= 96:
     messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox' \nIt must be between 8 and 32.")
-    sys.exit(1)  # Exit the program
+    sys.exit(1)
 
 fontsize_treeview = int((config['Settings'].get('fontsize_treeview', '12')))
 if not 8 <= fontsize_textbox <= 96:
     messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview' \nIt must be between 8 and 32.")
-    sys.exit(1)  # Exit the program
+    sys.exit(1)
 
 
 # ウィンドウサイズの取得
@@ -69,7 +69,7 @@ messages_enabled = config['Settings'].get('messages', 'enable') == 'enable'
 # 自動保存設定
 autosave_json_enabled = config['Settings'].get('autosave_json', 'enable') == 'enable'
 
-# 多言語対応のメッセージとラベル
+# メッセージとラベル
 messages = {
     'ja': {
         'add_parent': '親追加',
@@ -195,7 +195,7 @@ class PromptApp:
         self.undo_history = []  # UNDO用の履歴スタック
         self.redo_history = []  # REDO用の履歴スタック
 
-        # ボタンの幅を統一
+        # ボタンの幅設定(例外あり)
         self.button_width1 = 8
 
         style = ttk.Style()

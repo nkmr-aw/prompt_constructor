@@ -1,0 +1,12 @@
+.idea/
+bk/
+build/
+dist/
+prompt/
+venv/
+resources.res
+resources.rc
+*.ini
+*.json
+*.spec
+*.txt
