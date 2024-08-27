@@ -1,4 +1,4 @@
-# prompt_constructor
+# Prompt Constructor (prompt_constructor)
 [English](#english) | [Japanese(日本語)](#japanese)
 
 ## English
