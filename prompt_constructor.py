@@ -777,7 +777,7 @@ class PromptConstructorMain:
                 self.tree3.insert(favorites_parent, "end", text=item_text)
                 messagebox.showinfo(messages[lang]['fav_info'], item_text + messages[lang]['fav_complete'])
             else:
-                messagebox.showinfo(messages[lang]['select_error'], item_text + messages[lang]['select_favitem'])
+                messagebox.showinfo(messages[lang]['select_error'], messages[lang]['select_favitem'])
 
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
     # 表示しているタブによる分岐処理は未記載
