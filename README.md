@@ -22,6 +22,9 @@ There are files and folders that are automatically created when you run the prog
 The registry is not used, and uninstallation is completed by deleting the entire folder.  
 Before deleting, be sure to save all necessary files.  
 
+### Manual
+Not yet made. It may be made [HERE](https://sites.google.com/view/nkmr-appworks/apps/prompt-constructor-en).
+
 ### If you want to build
 This application is intended to be built and used, however, it is not recommended to build it using PyInstaller or Nuitka,  
 as it is likely to be mis-detected as a malware.  
@@ -55,6 +58,9 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 ### アンインストール
 レジストリなどは使用していませんので、フォルダごと削除すればアンインストール完了です。  
 削除前に必要なファイル等を事前退避するなりしておいてください。  
+
+### マニュアル
+未作成です。[ココ](https://sites.google.com/view/nkmr-appworks/apps/prompt-constructor-ja)に作るかもしれません。
 
 ### ビルドしたい場合
 本アプリはビルドして使うことも想定して作ってあるつもりですが、  
