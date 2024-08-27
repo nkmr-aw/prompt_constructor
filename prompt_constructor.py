@@ -203,15 +203,15 @@ messages = {
 }
 
 initial_data_chunks = {
-    "Chunks 001": ["chunk 01","chunk 02","chunk 03"],
-    "Chunks 002": ["chunk 01","chunk 02","chunk 03"],
-    "Chunks 003": ["chunk 01","chunk 02","chunk 03"]
+    "Chunks 001": ["1","2","3"],
+    "Chunks 002": ["1","2","3"],
+    "Chunks 003": ["1","2","3"]
     }
 
 initial_data_words = {
-    "Words 001": ["word 01","word 02","word 03"],
-    "Words 002": ["word 01","word 02","word 03"],
-    "Words 003": ["word 01","word 02","word 03"]
+    "Words 001": ["1","2","3"],
+    "Words 002": ["1","2","3"],
+    "Words 003": ["1","2","3"]
     }
 
 initial_data_favorites = {
@@ -269,11 +269,11 @@ class PromptConstructorMain:
         self.add_child_button.pack(side=tk.LEFT)
 
         # 「展開」ボタン
-        self.expand_button = tk.Button(self.button_frame, text=messages[lang]['expand'], width=1, command=self.expand_all)
+        self.expand_button = tk.Button(self.button_frame, text=messages[lang]['expand'], width=3, command=self.expand_all)
         self.expand_button.pack(side=tk.LEFT)
 
         # 「閉じる」ボタン
-        self.collapse_button = tk.Button(self.button_frame, text=messages[lang]['collapse'], width=1, command=self.collapse_all)
+        self.collapse_button = tk.Button(self.button_frame, text=messages[lang]['collapse'], width=3, command=self.collapse_all)
         self.collapse_button.pack(side=tk.LEFT)
 
         # 「削除」ボタン
@@ -602,6 +602,11 @@ class PromptConstructorMain:
     def on_double_click(self, event):
         text_widget = event.widget
         
+        # テキストウィジェットであることを確認
+        # エラー抑止処理
+        if not isinstance(text_widget, tk.Text):
+            return  # テキストウィジェットでない場合は何もしない
+
         # 現在の選択範囲を取得
         try:
             start = text_widget.index("sel.first")
@@ -849,30 +854,31 @@ class PromptConstructorMain:
             else:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテム選択時
-                    children = tree.get_children(parent_item)
-                    if len(children) == 1:
-                        if messages_enabled:
-                            messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_child'])
-                        return
-                    else:
-                        result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
-                        if result:
-                            # 削除前に前後のアイテムを記憶しておく
-                            previous_item = tree.prev(selected_item[0])
-                            next_item = tree.next(selected_item[0])
-                            # 削除したアイテムの上のアイテムにフォーカスを移動
-                            if previous_item:
-                                tree.focus(previous_item)
-                                tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
-                            else:
-                                # 上のアイテムがない場合は下のアイテムにフォーカスを移動
-                                if next_item:
-                                    tree.focus(next_item)
-                                    tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+                    # 子アイテム0個を許容するように変更するためコメントアウト
+                    # children = tree.get_children(parent_item)
+                    # if len(children) == 1:
+                    #     if messages_enabled:
+                    #         messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_child'])
+                    #     return
+                    # else:
+                    result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
+                    if result:
+                        # 削除前に前後のアイテムを記憶しておく
+                        previous_item = tree.prev(selected_item[0])
+                        next_item = tree.next(selected_item[0])
+                        # 削除したアイテムの上のアイテムにフォーカスを移動
+                        if previous_item:
+                            tree.focus(previous_item)
+                            tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                        else:
+                            # 上のアイテムがない場合は下のアイテムにフォーカスを移動
+                            if next_item:
+                                tree.focus(next_item)
+                                tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
 
-                            tree.delete(selected_item[0])
-                            if autosave_json_enabled:
-                                self.save_dicts_to_json()
+                        tree.delete(selected_item[0])
+                        if autosave_json_enabled:
+                            self.save_dicts_to_json()
                 else:  # 親アイテム選択時
                     children = tree.get_children(selected_item[0])
                     if len(tree.get_children()) == 1:
@@ -1029,6 +1035,7 @@ class PromptConstructorMain:
         # プロンプトをテキストボックスに表示
         self.text_box_bottom.delete(1.0, tk.END)
         self.text_box_bottom.insert(tk.END, content)
+        self.undo_history.append(content)
 
     def on_load_button_click(self):
         from tkinter import filedialog
@@ -1041,8 +1048,6 @@ class PromptConstructorMain:
                 content = file.read()
                 self.text_box_bottom.delete(1.0, tk.END)
                 self.text_box_bottom.insert(tk.END, content)
-                self.undo_history.clear()
-                self.redo_history.clear()
                 self.undo_history.append(content)
             if messages_enabled:
                 messagebox.showinfo(messages[lang]['load'], messages[lang]['load_message'])
