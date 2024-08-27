@@ -29,6 +29,9 @@ as it is likely to be mis-detected as a malware.
 ### Notes
 Please use in accordance with the [LICENSE](./LICENSE).  
 
+Please use at your own risk whether you build and use it or not.  
+Thank you for your cooperation.
+
 
 
 ## Japanese
@@ -55,8 +58,12 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 ### ビルドしたい場合
 本アプリはビルドして使うことも想定して作ってあるつもりですが、  
 PyInstallerやNuitkaを用いてビルドするとマルウェアとして誤検知される可能性が高いのでおすすめしません。  
+なるべくビルドせずにそのままお使いください。  
 
 ### 注意事項
 [ライセンス](./LICENSE)に従ってご利用ください。  
+
+ビルドしてお使いになる場合もそうでない場合も自己責任でお使いください。  
+よろしくお願いします。  
 
 
