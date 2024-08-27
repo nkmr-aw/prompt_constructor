@@ -58,7 +58,6 @@ if not 8 <= fontsize_textbox <= 96:
     messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview' \nIt must be between 8 and 32.")
     sys.exit(1)
 
-
 # ウィンドウサイズの取得
 window_width = int(config['Settings'].get('window_width', '800'))
 window_height = int(config['Settings'].get('window_height', '600'))
@@ -436,7 +435,6 @@ class PromptApp:
         
         return False
 
-
     def on_ctrl_arrow_key(self, event):
         text_widget = event.widget
         
@@ -475,12 +473,10 @@ class PromptApp:
                 # 選択範囲を維持
                 text_widget.tag_add(tk.SEL, start, f"{start}+{len(new_text)}c")
 
-        
         # カーソル位置を選択範囲の終わりに設定
         text_widget.mark_set(tk.INSERT, tk.SEL_LAST)
         # イベントの伝播を停止
         return "break"
-
 
     def modify_text(self, text, increase):
         # 数値部分を抽出
@@ -517,7 +513,6 @@ class PromptApp:
         new_text = f"{base_text}:{formatted_number}"
         return new_text
 
-
     def on_double_click(self, event):
         text_widget = event.widget
         
@@ -542,11 +537,7 @@ class PromptApp:
         text_widget.tag_remove(tk.SEL, "1.0", tk.END)
         text_widget.tag_add(tk.SEL, start, new_end)
 
-        selected_text = cleaned_text
-        print(selected_text)
-
         return "break"  # デフォルトの動作を防ぐ
-
 
     def on_tree_select(self, event):
         tree = event.widget
@@ -623,7 +614,6 @@ class PromptApp:
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
-        # print(self.drag_data["item"])
 
     def on_tree_item_release(self, event):
         self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
@@ -710,8 +700,6 @@ class PromptApp:
                     tree.delete(selected_item[0])
                     if autosave_json_enabled:
                         self.save_dicts_to_json()
-                    
-                    print("1")
         else:
             children = tree.get_children(selected_item[0])
             if len(tree.get_children()) == 1:
@@ -737,8 +725,6 @@ class PromptApp:
                     tree.delete(selected_item[0])
                     if autosave_json_enabled:
                         self.save_dicts_to_json()
-                    
-                    print("2")
             else:
                 # 削除前に前後のアイテムを記憶しておく
                 previous_item = tree.prev(selected_item[0])
@@ -756,9 +742,6 @@ class PromptApp:
                 tree.delete(selected_item[0])
                 if autosave_json_enabled:
                     self.save_dicts_to_json()
-
-                print("3")
-
 
     def on_update_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
@@ -1113,7 +1096,6 @@ class PromptApp:
         else:
             self.text_box_top.delete(1.0, tk.END)
 
-
     def load_latest_prompt_file(self):
         prompt_folder = 'prompt'
         if not os.path.exists(prompt_folder):  # フォルダの存在確認
@@ -1135,7 +1117,7 @@ class PromptApp:
                     self.redo_history.clear()
                     self.undo_history.append(content)
             except Exception as e:
-                print(f"Error reading file: {e}")  # エラーメッセージを表示
+                print(f"Error reading file: {e}")  # エラーメッセージ
 
     # バインド用履歴保存処理(プロンプト欄の直接のテキスト編集を監視するのに使う)
     def save_to_history1(self, event=None):
@@ -1170,27 +1152,6 @@ class PromptApp:
         with open(settings_path, 'w') as configfile:
             config.write(configfile)
 
-    def save_dicts_to_json(self):
-        # dict_chunks.jsonの保存
-        data_left = {}
-        for parent_item in self.tree_left.get_children():
-            parent_text = self.tree_left.item(parent_item, "text")
-            children_texts = [self.tree_left.item(child, "text") for child in self.tree_left.get_children(parent_item)]
-            data_left[parent_text] = children_texts
-
-        with open('dict_chunks.json', 'w', encoding='utf-8') as file:
-            json.dump(data_left, file, ensure_ascii=False, indent=4)
-
-        # dict_words.jsonの保存
-        data_right = {}
-        for parent_item in self.tree_right.get_children():
-            parent_text = self.tree_right.item(parent_item, "text")
-            children_texts = [self.tree_right.item(child, "text") for child in self.tree_right.get_children(parent_item)]
-            data_right[parent_text] = children_texts
-
-        with open('dict_words.json', 'w', encoding='utf-8') as file:
-            json.dump(data_right, file, ensure_ascii=False, indent=4)
-
     def save_prompt_and_close(self):
         import datetime
         import glob
@@ -1203,10 +1164,8 @@ class PromptApp:
         default_directory = 'prompt'
         default_filename = f"prompt_tmp_{datetime.datetime.now().strftime(config['Settings']['datetime_format'])}.txt"
         file_path = os.path.join(default_directory, default_filename)
-        
 
         content = self.text_box_bottom.get(1.0, tk.END)  # 末尾の空白を残すためにrstripしない
-
         # 末尾の改行を一つだけに置換
         content = content.rstrip("\n") + "\n" if content.endswith("\n") else content
 
@@ -1239,7 +1198,7 @@ class PromptApp:
         self.load_dicts_from_json()
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
 
-        # フォント設定(tkFontのインポートをrootウインドウ作成後に行う必要があるため、ここで実施)
+        # フォント設定(tkFontのインポートをrootウインドウ作成後に行う必要があるため、initではなくここで実施)
         textfont = config['Settings']['textfont']
         try:
             tkFont.Font(family=textfont)
