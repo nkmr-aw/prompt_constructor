@@ -173,10 +173,11 @@ initial_data_words = {
     }
 
 
-class PromptApp:
-    def __init__(self, root):
+class PromptConstructorMain:
+    def __init__(self):
+        root = tk.Tk()
         self.root = root
-        self.root.title("Prompt Builder v" + version)
+        self.root.title("Prompt Constructor v" + version)
         self.root.geometry(f"{window_width}x{window_height}")
 
         # プロンプト欄のカーソル位置を記憶する
@@ -382,6 +383,23 @@ class PromptApp:
 
         # 過去に自動保存されたtmpファイルを読み込む(text_box_bottomが配置された後でないと動作しないので注意)
         self.load_latest_prompt_file()
+
+        self.start()
+
+
+    def start(self):
+        self.ensure_prompt_files_exist()
+        self.load_dicts_from_json()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
+
+        # フォント設定(tkFontのインポートをrootウインドウ作成後に行う必要があるため、initではなくここで実施)
+        textfont = config['Settings']['textfont']
+        try:
+            tkFont.Font(family=textfont)
+        except tk.TclError:
+            textfont = 'TkDefaultFont'  # 利用できないフォントならTkinterのデフォルトフォントを使用
+
+        self.root.mainloop()
 
 
     def expand_selection(self, target_text):
@@ -1192,23 +1210,8 @@ class PromptApp:
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
             self.root.destroy()
-        
-    def start(self):
-        self.ensure_prompt_files_exist()
-        self.load_dicts_from_json()
-        self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
-
-        # フォント設定(tkFontのインポートをrootウインドウ作成後に行う必要があるため、initではなくここで実施)
-        textfont = config['Settings']['textfont']
-        try:
-            tkFont.Font(family=textfont)
-        except tk.TclError:
-            textfont = 'TkDefaultFont'  # 利用できないフォントならTkinterのデフォルトフォントを使用
-
-        self.root.mainloop()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = PromptApp(root)
-    app.start()
+    PromptConstructorMain()
+
