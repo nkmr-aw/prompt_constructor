@@ -3,7 +3,7 @@ import sys
 import json
 import configparser
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, Menu
 import tkinter.font as tkFont
 from glob import glob
 import re
@@ -15,7 +15,7 @@ version = "1.0.0"
 # 言語設定の読み込み
 config = configparser.ConfigParser()
 settings_path = os.path.join(os.path.dirname(sys.argv[0]), 'settings.ini')
-if not os.path.exists(settings_path):
+if not os.path.exists(settings_path):  # iniファイルがない場合はデフォルト値で新規作成
     config['Settings'] = {
         'lang': 'en', 
         'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
@@ -31,8 +31,37 @@ if not os.path.exists(settings_path):
         }
     with open(settings_path, 'w') as configfile:
         config.write(configfile)
-else:
+else:  # iniファイルが既にある場合は読み込むが、設定値があるかチェックし、ない場合は追加する
     config.read(settings_path)
+
+    # 'Settings'セクションが存在しない場合は新規作成
+    if 'Settings' not in config:
+        config['Settings'] = {}
+
+        # 各設定項目の確認とデフォルト値の追加
+    default_settings = {
+        'lang': 'en', 
+        'increment_unit': '0.05',
+        'window_width': '1000',
+        'window_height': '600',
+        'messages': 'enable',
+        'autosave_json': 'disable',
+        'backup_json': 'enable',
+        'textfont': 'TkDefaultFont',
+        'fontsize_treeview': '12',
+        'fontsize_textbox': '12',
+        'datetime_format': '%%Y%%m%%d_%%H%%M%%S',
+    }
+
+    for key, value in default_settings.items():
+        if key not in config['Settings']:
+            config['Settings'][key] = value
+
+    # 設定をINIファイルに書き込む
+    with open(settings_path, 'w') as configfile:
+        config.write(configfile)
+
+
 
 # 設定値のバリデーション
 lang = config['Settings']['lang']
@@ -80,12 +109,16 @@ messages = {
         'check_lock': 'ロック',
         'list': '一覧',
         'load': 'ロード',
+        'load_message': 'ファイルを読み込みました。',
         'save': 'セーブ',
+        'save_message': 'ファイルを保存しました。',
         'copy': 'コピー',
         'shuffle': 'シャッフル',
         'clear': 'クリア',
+        'add_fav': 'お気に入りに追加',
         'tab_chunks': '  チャンク  ',
         'tab_words':  '    単語    ',
+        'tab_favorites':  ' お気に入り ',
         'select_error': '選択エラー',
         'delete_error': '削除エラー',
         'update_error': '更新エラー',
@@ -102,6 +135,7 @@ messages = {
         'prompt_cleared': '作成したプロンプトを消去します。本当によろしいですか？',
         'item_deleted': '選択したアイテムを削除します。削除していいですか？',
         'item_deleted_with_children': '配下のアイテムも一緒にすべて削除されます。削除していいですか？',
+        'favparent_deletion_error': 'お気に入りの親アイテムは削除できません。', 
         'item_updated': 'アイテムが更新されました。',
         'item_exists': '他の親アイテムと内容が一致しています。同じ内容を登録することはできません。',
         'text_empty': 'テキストボックスが空です。',
@@ -109,6 +143,9 @@ messages = {
         'select_item_to_delete': '削除対象アイテムを選択してください。',
         'parent_needs_child': '親アイテムには最低一つの子アイテムが必要です。',
         'parent_needs_one': '親アイテムは最低一つ残す必要があります。',
+        'fav_info': 'お気に入り追加完了',
+        'fav_complete': ' をお気に入りに追加しました。', # 先頭にスペース入れる
+        'select_favitem': 'お気に入りに追加するアイテムを選択してください。',
         'check_autosave_json': '辞書オートセーブ',
         'save_json': '辞書セーブ',
         'exit_confirm': '終了前確認',
@@ -128,8 +165,10 @@ messages = {
         'copy': 'Copy',
         'shuffle': 'Shuffle',
         'clear': 'Clear',
+        'add_fav': 'Add to Favorites',
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
+        'tab_favorites':  '  Favorites  ',
         'select_error': 'Selection Error',
         'delete_error': 'Deletion Error',
         'update_error': 'Update Error',
@@ -146,6 +185,7 @@ messages = {
         'prompt_cleared': 'Are you sure you want to clear the created prompt?',
         'item_deleted': 'Are you sure you want to delete the selected item?',
         'item_deleted_with_children': 'All items under the selected item will also be deleted. Are you sure?',
+        'favparent_deletion_error': 'Parent items of Fav. cannot be deleted.', 
         'item_updated': 'Item has been updated.',
         'item_exists': 'Another parent item with the same content already exists. Cannot register the same content.',
         'text_empty': 'Text box is empty.',
@@ -153,6 +193,8 @@ messages = {
         'select_item_to_delete': 'Please select an item to delete.',
         'parent_needs_child': 'A parent item must have at least one child item.',
         'parent_needs_one': 'At least one parent item must remain.',
+        'fav_info': 'Fav Complete',
+        'fav_complete': ' is added to Favorites.', # 先頭にスペース入れる
         'check_autosave_json': 'Auto Save dicts.',
         'save_json': 'Save dicts.',
         'exit_confirm': 'Exit Confirmation',
@@ -161,15 +203,20 @@ messages = {
 }
 
 initial_data_chunks = {
-    "Chunk Category 001": ["chunk 01","chunk 02","chunk 03"],
-    "Chunk Category 002": ["chunk 01","chunk 02","chunk 03"],
-    "Chunk Category 003": ["chunk 01","chunk 02","chunk 03"]
+    "Chunks 001": ["chunk 01","chunk 02","chunk 03"],
+    "Chunks 002": ["chunk 01","chunk 02","chunk 03"],
+    "Chunks 003": ["chunk 01","chunk 02","chunk 03"]
     }
 
 initial_data_words = {
-    "Words Category 001": ["word 01","word 02","word 03"],
-    "Words Category 002": ["word 01","word 02","word 03"],
-    "Words Category 003": ["word 01","word 02","word 03"]
+    "Words 001": ["word 01","word 02","word 03"],
+    "Words 002": ["word 01","word 02","word 03"],
+    "Words 003": ["word 01","word 02","word 03"]
+    }
+
+initial_data_favorites = {
+    "Fav:Chunks": [],
+    "Fav:Words": []
     }
 
 
@@ -237,31 +284,44 @@ class PromptConstructorMain:
         self.tab_control = ttk.Notebook(self.left_frame)
         self.tab_control.pack(fill=tk.BOTH, expand=True)
 
-        # 左タブ (dict_chunks.json)
-        self.left_tab = ttk.Frame(self.tab_control)
-        self.tab_control.add(self.left_tab, text=messages[lang]['tab_chunks'])
+        # タブ1 (dict_chunks.json)
+        self.tab1 = ttk.Frame(self.tab_control)
+        self.tab_control.add(self.tab1, text=messages[lang]['tab_chunks'])
 
-        # 右タブ (dict_words.json)
-        self.right_tab = ttk.Frame(self.tab_control)
-        self.tab_control.add(self.right_tab, text=messages[lang]['tab_words'])
+        # タブ2 (dict_words.json)
+        self.tab2 = ttk.Frame(self.tab_control)
+        self.tab_control.add(self.tab2, text=messages[lang]['tab_words'])
 
-        # 左タブのツリービュー
-        self.tree_left = ttk.Treeview(self.left_tab, style="Treeview")
-        self.tree_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # タブ3 (dict_favorites.json)
+        self.tab3 = ttk.Frame(self.tab_control)
+        self.tab_control.add(self.tab3, text=messages[lang]['tab_favorites'])
+
+        # タブ1のツリービュー
+        self.tree1 = ttk.Treeview(self.tab1, style="Treeview")
+        self.tree1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
  
-        # 左タブのスクロールバー
-        self.tree_scrollbar_left = ttk.Scrollbar(self.left_tab, orient="vertical", command=self.tree_left.yview)
-        self.tree_left.configure(yscrollcommand=self.tree_scrollbar_left.set)
-        self.tree_scrollbar_left.pack(side=tk.RIGHT, fill=tk.Y)
+        # タブ1のスクロールバー
+        self.tree1_scrollbar = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree1.yview)
+        self.tree1.configure(yscrollcommand=self.tree1_scrollbar.set)
+        self.tree1_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # 右タブのツリービュー
-        self.tree_right = ttk.Treeview(self.right_tab, style="Treeview")
-        self.tree_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # タブ2のツリービュー
+        self.tree2 = ttk.Treeview(self.tab2, style="Treeview")
+        self.tree2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # 右タブのスクロールバー
-        self.tree_scrollbar_right = ttk.Scrollbar(self.right_tab, orient="vertical", command=self.tree_right.yview)
-        self.tree_right.configure(yscrollcommand=self.tree_scrollbar_right.set)
-        self.tree_scrollbar_right.pack(side=tk.RIGHT, fill=tk.Y)
+        # タブ2のスクロールバー
+        self.tree2_scrollbar = ttk.Scrollbar(self.tab2, orient="vertical", command=self.tree2.yview)
+        self.tree2.configure(yscrollcommand=self.tree2_scrollbar.set)
+        self.tree2_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # タブ3のツリービュー
+        self.tree3 = ttk.Treeview(self.tab3, style="Treeview")
+        self.tree3.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # タブ3のスクロールバー
+        self.tree3_scrollbar = ttk.Scrollbar(self.tab3, orient="vertical", command=self.tree3.yview)
+        self.tree3.configure(yscrollcommand=self.tree3_scrollbar.set)
+        self.tree3_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # JSONファイルのロード
         self.load_dicts_from_json()
@@ -271,16 +331,24 @@ class PromptConstructorMain:
         self.last_selected_child = None
 
         # ツリービューの選択イベントをバインド
-        self.tree_left.bind("<<TreeviewSelect>>", self.on_tree_select)
-        self.tree_right.bind("<<TreeviewSelect>>", self.on_tree_select)
+        self.tree1.bind("<<TreeviewSelect>>", self.on_tree_select)
+        self.tree2.bind("<<TreeviewSelect>>", self.on_tree_select)
 
         # ドラッグ＆ドロップのバインド
-        self.tree_left.bind("<ButtonPress-1>", self.on_tree_item_press)
-        self.tree_left.bind("<B1-Motion>", self.on_tree_item_motion)
-        self.tree_left.bind("<ButtonRelease-1>", self.on_tree_item_release)
-        self.tree_right.bind("<ButtonPress-1>", self.on_tree_item_press)
-        self.tree_right.bind("<B1-Motion>", self.on_tree_item_motion)
-        self.tree_right.bind("<ButtonRelease-1>", self.on_tree_item_release)
+        self.tree1.bind("<ButtonPress-1>", self.on_tree_item_press)
+        self.tree1.bind("<ButtonPress-3>", self.on_tree_item_press2)
+        self.tree1.bind("<B1-Motion>", self.on_tree_item_motion)
+        self.tree1.bind("<ButtonRelease-1>", self.on_tree_item_release)
+        
+        self.tree2.bind("<ButtonPress-1>", self.on_tree_item_press)
+        self.tree2.bind("<ButtonPress-3>", self.on_tree_item_press2)
+        self.tree2.bind("<B1-Motion>", self.on_tree_item_motion)
+        self.tree2.bind("<ButtonRelease-1>", self.on_tree_item_release)
+        
+        self.tree3.bind("<ButtonPress-1>", self.on_tree_item_press)
+        self.tree3.bind("<ButtonPress-3>", self.on_tree_item_press2)
+        self.tree3.bind("<B1-Motion>", self.on_tree_item_motion)
+        self.tree3.bind("<ButtonRelease-1>", self.on_tree_item_release)
 
         # ドラッグデータの初期化
         self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
@@ -372,7 +440,7 @@ class PromptConstructorMain:
         self.text_box_bottom.bind("<Control-Down>", self.on_ctrl_arrow_key)
         self.text_box_bottom.bind('<KeyRelease>', self.save_to_history1)
 
-        self.root.bind("<Double-Button-1>", self.on_double_click)  # プロンプト欄では正常動作しなかったのでrootにbind(上のテキスト欄でも動作する)
+        self.root.bind("<Double-Button-1>", self.on_double_click)  # プロンプト欄では正常動作しなかったのでrootを監視(上のテキスト欄でも動作する)
 
         # タブ切り替え時のイベントをバインド
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_changed)
@@ -587,7 +655,7 @@ class PromptConstructorMain:
                 self.last_selected_child = None
 
     def expand_all(self):
-        for tree in [self.tree_left, self.tree_right]:
+        for tree in [self.tree1, self.tree2, self.tree3]:
             for item in tree.get_children():
                 tree.item(item, open=True)
                 self.expand_children(tree, item)
@@ -598,7 +666,7 @@ class PromptConstructorMain:
             self.expand_children(tree, child)
 
     def collapse_all(self):
-        for tree in [self.tree_left, self.tree_right]:
+        for tree in [self.tree1, self.tree2, self.tree3]:
             for item in tree.get_children():
                 tree.item(item, open=False)
                 self.collapse_children(tree, item)
@@ -608,12 +676,28 @@ class PromptConstructorMain:
             tree.item(child, open=False)
             self.collapse_children(tree, child)
 
+    # ツリーアイテムを左クリックで選択したときの動作
     def on_tree_item_press(self, event):
         tree = event.widget
         self.drag_data = {"x": event.x, "y": event.y, "item": tree.identify_row(event.y), "tree": tree}
         self.is_dragging = True  # ドラッグ開始時に is_dragging を True に設定
         # ドラッグ開始時にアイテムを記録
         self.drag_start_item = self.drag_data["item"]
+
+    # ツリーアイテムを右クリックで選択したときの動作
+    def on_tree_item_press2(self, event):
+        # 右クリックでアイテムを選択
+        tree = event.widget
+        item = tree.identify_row(event.y)
+        if item:
+            if self.tree1.exists(item):
+                self.tree1.selection_set(item)
+            elif self.tree2.exists(item):
+                self.tree2.selection_set(item)
+            elif self.tree3.exists(item):
+                self.tree3.selection_set(item)
+
+        self.right_click_menu(event)
 
     def on_tree_item_motion(self, event):
         if "item" in self.drag_data and self.drag_data["item"]:
@@ -639,9 +723,62 @@ class PromptConstructorMain:
         if autosave_json_enabled:
             self.save_dicts_to_json()
 
+
+    def right_click_menu(self, event):
+        menu = Menu(self.root, tearoff=0)
+        current_tab = self.tab_control.index(self.tab_control.select())
+        tree = self.tree1 if current_tab == 0 else self.tree2 if current_tab == 1 else self.tree3
+        selected_item = tree.selection()
+
+        # チャンクタブか単語タブの場合
+        if tree in [self.tree1, self.tree2]:
+            if selected_item:
+                parent_item = tree.parent(selected_item[0])
+                if parent_item:  # 子アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['add_fav'], command=self.add_to_favorites)
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
+                else:  # 親アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
+
+        # お気に入りタブの場合
+        elif tree == self.tree3:
+            if selected_item:
+                parent_item = tree.parent(selected_item[0])
+                if parent_item:  # 子アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
+                else:  # 親アイテムが選択されている場合
+                    pass
+
+        menu.post(event.x_root, event.y_root)
+
+    def add_to_favorites(self):
+        current_tab = self.tab_control.index(self.tab_control.select())
+        tree = self.tree1 if current_tab == 0 else self.tree2 if current_tab == 1 else None
+
+        if tree:
+            selected_item = tree.selection()
+            if selected_item:
+                item_text = tree.item(selected_item[0], "text")
+                # tree1のアイテムを選択している場合
+                if tree == self.tree1:
+                    favorites_parent = self.tree3.get_children()[0]  # 1つ目の親アイテム
+                # tree2のアイテムを選択している場合
+                elif tree == self.tree2:
+                    favorites_parent = self.tree3.get_children()[1]  # 2つ目の親アイテム
+                else:
+                    return
+
+                # 子アイテムとして追加
+                self.tree3.insert(favorites_parent, "end", text=item_text)
+                messagebox.showinfo(messages[lang]['fav_info'], item_text + messages[lang]['fav_complete'])
+            else:
+                messagebox.showinfo(messages[lang]['select_error'], item_text + messages[lang]['select_favitem'])
+
+    # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
+    # 表示しているタブによる分岐処理は未記載
     def on_add_parent_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree_left if current_tab == 0 else self.tree_right
+        tree = self.tree1 if current_tab == 0 else self.tree2
         parent_count = len(tree.get_children()) + 1
         parent_text = f"Genre {parent_count}" if current_tab == 0 else f"Category {parent_count}"
         parent_item = tree.insert("", "end", text=parent_text)
@@ -658,9 +795,11 @@ class PromptConstructorMain:
         # 追加したアイテムにフォーカスを移動
         tree.focus(parent_item)
 
+    # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
+    # 表示しているタブによる分岐処理は未記載
     def on_add_child_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree_left if current_tab == 0 else self.tree_right
+        tree = self.tree1 if current_tab == 0 else self.tree2
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
@@ -685,85 +824,106 @@ class PromptConstructorMain:
 
     def on_delete_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree_left if current_tab == 0 else self.tree_right
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        else:
+            tree = self.tree3
+        
         selected_item = tree.selection()
-        if not selected_item:
+        if selected_item:
+            # お気に入りタブのアイテム選択時
+            if tree == self.tree3:
+                parent_item = tree.parent(selected_item[0])
+                if parent_item:  # 子アイテムが選択されている場合
+                    result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
+                    if result:
+                        tree.delete(selected_item[0])
+                        if autosave_json_enabled:
+                            self.save_dicts_to_json()
+                else:  # 親アイテムが選択されている場合
+                    messagebox.showerror(messages[lang]['delete_error'], messages[lang]['favparent_deletion_error'])
+                    return
+            # それ以外のタブのアイテム選択時
+            else:
+                parent_item = tree.parent(selected_item[0])
+                if parent_item:  # 子アイテム選択時
+                    children = tree.get_children(parent_item)
+                    if len(children) == 1:
+                        if messages_enabled:
+                            messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_child'])
+                        return
+                    else:
+                        result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
+                        if result:
+                            # 削除前に前後のアイテムを記憶しておく
+                            previous_item = tree.prev(selected_item[0])
+                            next_item = tree.next(selected_item[0])
+                            # 削除したアイテムの上のアイテムにフォーカスを移動
+                            if previous_item:
+                                tree.focus(previous_item)
+                                tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                            else:
+                                # 上のアイテムがない場合は下のアイテムにフォーカスを移動
+                                if next_item:
+                                    tree.focus(next_item)
+                                    tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+
+                            tree.delete(selected_item[0])
+                            if autosave_json_enabled:
+                                self.save_dicts_to_json()
+                else:  # 親アイテム選択時
+                    children = tree.get_children(selected_item[0])
+                    if len(tree.get_children()) == 1:
+                        if messages_enabled:
+                            messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_one'])
+                        return
+                    elif children:
+                        result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted_with_children'])
+                        if result:
+                            # 削除前に前後のアイテムを記憶しておく
+                            previous_item = tree.prev(selected_item[0])
+                            next_item = tree.next(selected_item[0])
+                            # 削除したアイテムの上のアイテムにフォーカスを移動
+                            if previous_item:
+                                tree.focus(previous_item)
+                                tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                            else:
+                                # 上のアイテムがない場合は下のアイテムにフォーカスを移動
+                                if next_item:
+                                    tree.focus(next_item)
+                                    tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+
+                            tree.delete(selected_item[0])
+                            if autosave_json_enabled:
+                                self.save_dicts_to_json()
+                    else:
+                        # 削除前に前後のアイテムを記憶しておく
+                        previous_item = tree.prev(selected_item[0])
+                        next_item = tree.next(selected_item[0])
+                        # 削除したアイテムの上のアイテムにフォーカスを移動
+                        if previous_item:
+                            tree.focus(previous_item)
+                            tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                        else:
+                            # 上のアイテムがない場合は下のアイテムにフォーカスを移動
+                            if next_item:
+                                tree.focus(next_item)
+                                tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+
+                        tree.delete(selected_item[0])
+                        if autosave_json_enabled:
+                            self.save_dicts_to_json()
+        else:
             if messages_enabled:
                 messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['select_item_to_delete'])
             return
 
-        parent_item = tree.parent(selected_item[0])
-        if parent_item:
-            children = tree.get_children(parent_item)
-            if len(children) == 1:
-                if messages_enabled:
-                    messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_child'])
-                return
-            else:
-                result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
-                if result:
-                    # 削除前に前後のアイテムを記憶しておく
-                    previous_item = tree.prev(selected_item[0])
-                    next_item = tree.next(selected_item[0])
-                    # 削除したアイテムの上のアイテムにフォーカスを移動
-                    if previous_item:
-                        tree.focus(previous_item)
-                        tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
-                    else:
-                        # 上のアイテムがない場合は下のアイテムにフォーカスを移動
-                        if next_item:
-                            tree.focus(next_item)
-                            tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
-
-                    tree.delete(selected_item[0])
-                    if autosave_json_enabled:
-                        self.save_dicts_to_json()
-        else:
-            children = tree.get_children(selected_item[0])
-            if len(tree.get_children()) == 1:
-                if messages_enabled:
-                    messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_one'])
-                return
-            elif children:
-                result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted_with_children'])
-                if result:
-                    # 削除前に前後のアイテムを記憶しておく
-                    previous_item = tree.prev(selected_item[0])
-                    next_item = tree.next(selected_item[0])
-                    # 削除したアイテムの上のアイテムにフォーカスを移動
-                    if previous_item:
-                        tree.focus(previous_item)
-                        tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
-                    else:
-                        # 上のアイテムがない場合は下のアイテムにフォーカスを移動
-                        if next_item:
-                            tree.focus(next_item)
-                            tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
-
-                    tree.delete(selected_item[0])
-                    if autosave_json_enabled:
-                        self.save_dicts_to_json()
-            else:
-                # 削除前に前後のアイテムを記憶しておく
-                previous_item = tree.prev(selected_item[0])
-                next_item = tree.next(selected_item[0])
-                # 削除したアイテムの上のアイテムにフォーカスを移動
-                if previous_item:
-                    tree.focus(previous_item)
-                    tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
-                else:
-                    # 上のアイテムがない場合は下のアイテムにフォーカスを移動
-                    if next_item:
-                        tree.focus(next_item)
-                        tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
-
-                tree.delete(selected_item[0])
-                if autosave_json_enabled:
-                    self.save_dicts_to_json()
 
     def on_update_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree_left if current_tab == 0 else self.tree_right
+        tree = self.tree1 if current_tab == 0 else self.tree2
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
@@ -885,7 +1045,7 @@ class PromptConstructorMain:
                 self.redo_history.clear()
                 self.undo_history.append(content)
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['load'], "ファイルを読み込みました。")
+                messagebox.showinfo(messages[lang]['load'], messages[lang]['load_message'])
 
     def on_save_button_click(self):
         if not self.text_box_bottom.get(1.0, tk.END).strip():
@@ -905,7 +1065,7 @@ class PromptConstructorMain:
                 # file.write(self.text_box_bottom.get(1.0, tk.END).strip())
                 file.write(self.text_box_bottom.get(1.0, tk.END))  # ファイル末尾の空白をそのまま残したいのでこちらを採用
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['save'], "ファイルを保存しました。")
+                messagebox.showinfo(messages[lang]['save'], messages[lang]['save_message'])
 
     def on_copy_button_click(self):
         self.root.clipboard_clear()
@@ -1031,6 +1191,10 @@ class PromptConstructorMain:
         else:
             pass
 
+        if not os.path.exists('dict_favorites.json'):
+            with open('dict_favorites.json', 'w', encoding='utf-8') as file:
+                json.dump(initial_data_favorites, file, ensure_ascii=False, indent=4)
+
         # bkフォルダの存在チェックと作成
         if not os.path.exists('bk'):
             os.makedirs('bk')
@@ -1057,55 +1221,95 @@ class PromptConstructorMain:
             with open('bk/dict_words_bk.json', 'w', encoding='utf-8') as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
 
+            # dict_favorites.jsonのバックアップ
+            with open('dict_favorites.json', 'r', encoding='utf-8') as file:
+                data = json.load(file)
+            with open('bk/dict_favorites_bk.json', 'w', encoding='utf-8') as file:
+                json.dump(data, file, ensure_ascii=False, indent=4)
+
     def load_dicts_from_json(self):
-        # 左タブのツリービューをクリア
-        for item in self.tree_left.get_children():
-            self.tree_left.delete(item)
+        # タブ1のツリービューをクリア
+        for item in self.tree1.get_children():
+            self.tree1.delete(item)
 
         # dict_chunks.jsonの読み込み
         with open('dict_chunks.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
             for parent, children in data.items():
-                parent_item = self.tree_left.insert("", "end", text=parent)
+                parent_item = self.tree1.insert("", "end", text=parent)
                 for child in children:
-                    self.tree_left.insert(parent_item, "end", text=child)
+                    self.tree1.insert(parent_item, "end", text=child)
 
-        # 右タブのツリービューをクリア
-        for item in self.tree_right.get_children():
-            self.tree_right.delete(item)
+        # タブ2のツリービューをクリア
+        for item in self.tree2.get_children():
+            self.tree2.delete(item)
 
         # dict_words.jsonの読み込み
         with open('dict_words.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
             for parent, children in data.items():
-                parent_item = self.tree_right.insert("", "end", text=parent)
+                parent_item = self.tree2.insert("", "end", text=parent)
                 for child in children:
-                    self.tree_right.insert(parent_item, "end", text=child)
+                    self.tree2.insert(parent_item, "end", text=child)
+
+        for item in self.tree3.get_children():
+            self.tree3.delete(item)
+
+        # dict_favorites.jsonの読み込み
+        with open('dict_favorites.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            for parent, children in data.items():
+                parent_item = self.tree3.insert("", "end", text=parent)
+                for child in children:
+                    self.tree3.insert(parent_item, "end", text=child)
+
 
     def save_dicts_to_json(self):
         # dict_chunks.jsonの保存
-        data_left = {}
-        for parent_item in self.tree_left.get_children():
-            parent_text = self.tree_left.item(parent_item, "text")
-            children_texts = [self.tree_left.item(child, "text") for child in self.tree_left.get_children(parent_item)]
-            data_left[parent_text] = children_texts
+        data1 = {}
+        for parent_item in self.tree1.get_children():
+            parent_text = self.tree1.item(parent_item, "text")
+            children_texts = [self.tree1.item(child, "text") for child in self.tree1.get_children(parent_item)]
+            data1[parent_text] = children_texts
 
         with open('dict_chunks.json', 'w', encoding='utf-8') as file:
-            json.dump(data_left, file, ensure_ascii=False, indent=4)
+            json.dump(data1, file, ensure_ascii=False, indent=4)
 
         # dict_words.jsonの保存
-        data_right = {}
-        for parent_item in self.tree_right.get_children():
-            parent_text = self.tree_right.item(parent_item, "text")
-            children_texts = [self.tree_right.item(child, "text") for child in self.tree_right.get_children(parent_item)]
-            data_right[parent_text] = children_texts
+        data2 = {}
+        for parent_item in self.tree2.get_children():
+            parent_text = self.tree2.item(parent_item, "text")
+            children_texts = [self.tree2.item(child, "text") for child in self.tree2.get_children(parent_item)]
+            data2[parent_text] = children_texts
 
         with open('dict_words.json', 'w', encoding='utf-8') as file:
-            json.dump(data_right, file, ensure_ascii=False, indent=4)
+            json.dump(data2, file, ensure_ascii=False, indent=4)
+
+        # dict_favorites.jsonの保存
+        data3 = {}
+        for parent_item in self.tree3.get_children():
+            parent_text = self.tree3.item(parent_item, "text")
+            children_texts = [self.tree3.item(child, "text") for child in self.tree3.get_children(parent_item)]
+            data3[parent_text] = children_texts
+
+        with open('dict_favorites.json', 'w', encoding='utf-8') as file:
+            json.dump(data3, file, ensure_ascii=False, indent=4)
+
+
+
 
     def on_tab_changed(self, event):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree_left if current_tab == 0 else self.tree_right
+        tree = self.tree1 if current_tab == 0 else self.tree2
+
+        # ボタンの有効/無効を設定
+        if current_tab == 2:  # tree3が表示中の場合
+            self.add_parent_button.config(state=tk.DISABLED)
+            self.add_child_button.config(state=tk.DISABLED)
+        else:  # tree1またはtree2が表示中の場合
+            self.add_parent_button.config(state=tk.NORMAL)
+            self.add_child_button.config(state=tk.NORMAL)
+
         selected_item = tree.selection()
         if selected_item:
             item_text = tree.item(selected_item[0], "text")
@@ -1194,7 +1398,6 @@ class PromptConstructorMain:
         self.root.after(100, self.root.destroy)
     
     def on_exit(self):
-
         if not autosave_json_enabled:
             result = messagebox.askokcancel(messages[lang]['exit_confirm'], messages[lang]['autosave_disabled_confirm'])
             if result:
