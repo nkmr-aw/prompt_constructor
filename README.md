@@ -25,6 +25,7 @@ Before deleting, be sure to save all necessary files.
 ### If you want to build
 This application is intended to be built and used, however, it is not recommended to build it using PyInstaller or Nuitka,  
 as it is likely to be mis-detected as a malware.  
+Please use the application as is without building it as much as possible.  
 
 ### Notes
 Please use in accordance with the [LICENSE](./LICENSE).  
