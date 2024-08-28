@@ -10,7 +10,7 @@ import re
 import random
 
 
-version = "1.0.2"
+version = "1.0.3"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -703,6 +703,11 @@ class PromptConstructorMain:
         # ドラッグ開始時にアイテムを記録
         self.drag_start_item = self.drag_data["item"]
 
+        # お気に入りタブの親アイテムの場合、ドラッグを禁止
+        if tree == self.tree3 and not tree.parent(self.drag_start_item):
+            self.is_dragging = False  # ドラッグを禁止
+            self.drag_data = {}  # ドラッグデータをクリア
+
     # ツリーアイテムを右クリックで選択したときの動作
     def on_tree_item_press2(self, event):
         # 右クリックでアイテムを選択
@@ -727,13 +732,17 @@ class PromptConstructorMain:
             dx = abs(x - self.drag_data["x"])
             dy = abs(y - self.drag_data["y"])
 
-            if dx > 20 or dy > 20:
+            if dx > 16 or dy > 16:
                 tree = self.drag_data["tree"]
                 target_item = tree.identify_row(y)
                 if target_item and target_item != self.drag_start_item:  # ドラッグ開始アイテムと異なる場合のみ移動
                     source_parent = tree.parent(self.drag_start_item)
                     target_parent = tree.parent(target_item)
-                    if (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
+
+                    # 子アイテムを持たない親アイテムの上に移動された場合
+                    if target_parent == "" and not tree.get_children(target_item):
+                        tree.move(self.drag_start_item, target_item, "end")  # 親アイテムの配下に移動
+                    elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
                         tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
 
                 self.drag_data["x"] = x
