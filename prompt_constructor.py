@@ -10,7 +10,7 @@ import re
 import random
 
 
-version = "1.0.1"
+version = "1.0.2"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -333,6 +333,7 @@ class PromptConstructorMain:
         # ツリービューの選択イベントをバインド
         self.tree1.bind("<<TreeviewSelect>>", self.on_tree_select)
         self.tree2.bind("<<TreeviewSelect>>", self.on_tree_select)
+        self.tree3.bind("<<TreeviewSelect>>", self.on_tree_select)
 
         # ドラッグ＆ドロップのバインド
         self.tree1.bind("<ButtonPress-1>", self.on_tree_item_press)
@@ -658,6 +659,19 @@ class PromptConstructorMain:
                 self.text_box_top.insert(tk.END, item_text)
                 self.last_selected_parent = selected_item[0]
                 self.last_selected_child = None
+        
+        # 削除ボタンと更新ボタンの有効・無効切り替え
+        if tree in [self.tree1, self.tree2]:
+            self.delete_button.config(state=tk.NORMAL)
+            self.update_button.config(state=tk.NORMAL)
+        elif tree == self.tree3:
+            if parent_item:  # 子アイテムが選択されている場合
+                self.delete_button.config(state=tk.NORMAL)
+                self.update_button.config(state=tk.NORMAL)
+            else:  # 親アイテムが選択されている場合
+                self.delete_button.config(state=tk.DISABLED)
+                self.update_button.config(state=tk.DISABLED)
+
 
     def expand_all(self):
         for tree in [self.tree1, self.tree2, self.tree3]:
@@ -731,13 +745,19 @@ class PromptConstructorMain:
         if autosave_json_enabled:
             self.save_dicts_to_json()
 
-
     def right_click_menu(self, event):
         menu = Menu(self.root, tearoff=0)
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2 if current_tab == 1 else self.tree3
-        selected_item = tree.selection()
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
 
+        selected_item = tree.selection()
         # チャンクタブか単語タブの場合
         if tree in [self.tree1, self.tree2]:
             if selected_item:
@@ -747,6 +767,8 @@ class PromptConstructorMain:
                     menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
                 else:  # 親アイテムが選択されている場合
                     menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
+            self.delete_button.config(state=tk.NORMAL)
+            self.update_button.config(state=tk.NORMAL)
 
         # お気に入りタブの場合
         elif tree == self.tree3:
@@ -754,14 +776,24 @@ class PromptConstructorMain:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
                     menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
+                    self.delete_button.config(state=tk.NORMAL)
+                    self.update_button.config(state=tk.NORMAL)
                 else:  # 親アイテムが選択されている場合
-                    pass
+                    self.delete_button.config(state=tk.DISABLED)
+                    self.update_button.config(state=tk.DISABLED)
 
         menu.post(event.x_root, event.y_root)
 
     def add_to_favorites(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2 if current_tab == 1 else None
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
 
         if tree:
             selected_item = tree.selection()
@@ -786,7 +818,15 @@ class PromptConstructorMain:
     # 表示しているタブによる分岐処理は未記載
     def on_add_parent_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
+        
         parent_count = len(tree.get_children()) + 1
         parent_text = f"Genre {parent_count}" if current_tab == 0 else f"Category {parent_count}"
         parent_item = tree.insert("", "end", text=parent_text)
@@ -807,7 +847,15 @@ class PromptConstructorMain:
     # 表示しているタブによる分岐処理は未記載
     def on_add_child_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
+        
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
@@ -836,8 +884,10 @@ class PromptConstructorMain:
             tree = self.tree1
         elif current_tab == 1:
             tree = self.tree2
-        else:
+        elif current_tab == 2:
             tree = self.tree3
+        else:
+            tree = None
         
         selected_item = tree.selection()
         if selected_item:
@@ -932,7 +982,15 @@ class PromptConstructorMain:
 
     def on_update_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
+        
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
@@ -1308,7 +1366,14 @@ class PromptConstructorMain:
 
     def on_tab_changed(self, event):
         current_tab = self.tab_control.index(self.tab_control.select())
-        tree = self.tree1 if current_tab == 0 else self.tree2
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
 
         # ボタンの有効/無効を設定
         if current_tab == 2:  # tree3が表示中の場合
@@ -1317,14 +1382,27 @@ class PromptConstructorMain:
         else:  # tree1またはtree2が表示中の場合
             self.add_parent_button.config(state=tk.NORMAL)
             self.add_child_button.config(state=tk.NORMAL)
+            self.delete_button.config(state=tk.NORMAL)
+            self.update_button.config(state=tk.NORMAL)
 
         selected_item = tree.selection()
         if selected_item:
             item_text = tree.item(selected_item[0], "text")
             self.text_box_top.delete(1.0, tk.END)
             self.text_box_top.insert(tk.END, item_text)
+
+            if current_tab == 2:  # お気に入りタブの場合
+                parent_item = tree.parent(selected_item[0])
+                if not parent_item:  # 親アイテムが選択されている場合
+                    self.delete_button.config(state=tk.DISABLED)
+                    self.update_button.config(state=tk.DISABLED)
+                else:
+                    self.delete_button.config(state=tk.NORMAL)
+                    self.update_button.config(state=tk.NORMAL)
         else:
             self.text_box_top.delete(1.0, tk.END)
+
+
 
     def load_latest_prompt_file(self):
         prompt_folder = 'prompt'
