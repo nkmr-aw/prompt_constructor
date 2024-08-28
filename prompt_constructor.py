@@ -10,7 +10,7 @@ import re
 import random
 
 
-version = "1.0.0"
+version = "1.0.1"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -694,12 +694,15 @@ class PromptConstructorMain:
         # 右クリックでアイテムを選択
         tree = event.widget
         item = tree.identify_row(event.y)
-        if item:
+
+        if tree == self.tree1:
             if self.tree1.exists(item):
                 self.tree1.selection_set(item)
-            elif self.tree2.exists(item):
+        elif tree == self.tree2:
+            if self.tree2.exists(item):
                 self.tree2.selection_set(item)
-            elif self.tree3.exists(item):
+        elif tree == self.tree3:
+            if self.tree3.exists(item):
                 self.tree3.selection_set(item)
 
         self.right_click_menu(event)
