@@ -23,7 +23,7 @@ The registry is not used, and uninstallation is completed by deleting the entire
 Before deleting, be sure to save all necessary files.  
 
 ### Manual
-[HERE](https://sites.google.com/view/nkmr-appworks/apps/pcon_en).
+[HERE.](https://sites.google.com/view/nkmr-appworks/apps/pcon_en)
 
 ### If you want to build
 This application is intended to be built and used, however, it is not recommended to build it using PyInstaller or Nuitka,  
@@ -60,7 +60,7 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 削除前に必要なファイル等を事前退避するなりしておいてください。  
 
 ### マニュアル
-[ココです](https://sites.google.com/view/nkmr-appworks/apps/pcon_ja)
+[ココです。](https://sites.google.com/view/nkmr-appworks/apps/pcon_ja)
 
 ### ビルドしたい場合
 本アプリはビルドして使うことも想定して作ってあるつもりですが、  
