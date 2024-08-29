@@ -10,7 +10,7 @@ import re
 import random
 
 
-version = "1.0.3"
+version = "1.0.4"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -742,8 +742,10 @@ class PromptConstructorMain:
                     # 子アイテムを持たない親アイテムの上に移動された場合
                     if target_parent == "" and not tree.get_children(target_item):
                         tree.move(self.drag_start_item, target_item, "end")  # 親アイテムの配下に移動
+                        tree.item(target_item, open=True)  # 親アイテムを展開 
                     elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
                         tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
+
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
