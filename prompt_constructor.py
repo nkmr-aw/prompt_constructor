@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import json
@@ -10,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.5"
+version = "1.0.5.1"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
