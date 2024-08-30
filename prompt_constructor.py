@@ -10,7 +10,7 @@ import re
 import random
 
 
-version = "1.0.5"
+version = "1.0.4"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -100,153 +100,105 @@ autosave_json_enabled = config['Settings'].get('autosave_json', 'enable') == 'en
 # メッセージとラベル
 messages = {
     'ja': {
-        'button_add_parent': '親追加',
-        'button_add_child': '子追加',
-        'button_expand': '+',
-        'button_collapse': '-',
-        'button_delete': '削除',
-        'check_autosave_json': '辞書オートセーブ',
-        'button_save_json': '辞書セーブ',
-        
-        'button_update': '更新',
-        'button_list': '一覧',
-        'button_load': 'ロード',
-        'button_save': 'セーブ',
-        'button_copy': 'コピー',
-        'button_shuffle': 'シャッフル',
+        'add_parent': '親追加',
+        'add_child': '子追加',
+        'expand': '+',
+        'collapse': '-',
+        'delete': '削除',
+        'update': '更新',
         'check_lock': 'ロック',
-        'button_clear': 'クリア',
-        'button_add_fav': 'お気に入りに追加',
-        'button_close': '閉じる',
-        
+        'list': '一覧',
+        'load': 'ロード',
+        'load_message': 'ファイルを読み込みました。',
+        'save': 'セーブ',
+        'save_message': 'ファイルを保存しました。',
+        'copy': 'コピー',
+        'shuffle': 'シャッフル',
+        'clear': 'クリア',
+        'add_fav': 'お気に入りに追加',
         'tab_chunks': '  チャンク  ',
         'tab_words':  '    単語    ',
         'tab_favorites':  ' お気に入り ',
-        
-        'title_load': 'ロード',
-        'message_load': 'ファイルを読み込みました。',
-        'title_save': 'セーブ',
-        'message_save': 'ファイルを保存しました。',
-        'message_text_empty': 'テキストボックスが空です。',
-
-        'title_fav_info': 'お気に入り追加',
-        'message_fav_complete': ' をお気に入りに追加しました。',  # 先頭にスペース入れる
-
-        'title_select_error': '選択エラー',
-        'message_select_favitem': 'お気に入りに追加するアイテムを選択してください。',
-        'message_select_item_to_add': '子アイテムを追加する場所を選択してください。',
-
-        'title_delete_error': '削除エラー',
-        'message_select_item_to_delete': '削除対象アイテムを選択してください。',
-        'message_favparent_deletion_error': 'お気に入りの親アイテムは削除できません。',
-        'message_parent_needs_child': '親アイテムには最低一つの子アイテムが必要です。',
-        'message_parent_needs_one': '親アイテムは最低一つ残す必要があります。',
-
-        'title_update_error': '更新エラー',
-        'message_select_item': '更新対象アイテムを選択してください。',
-        'message_item_exists': '他の親アイテムと内容が一致しています。同じ内容を登録することはできません。',
-
-        'title_update_complete': '更新完了',
-        'message_item_updated': 'アイテムが更新されました。',
-
-        'title_copy_complete': 'コピー完了',
-        'message_prompt_created': '作成したプロンプトをクリップボードにコピーしました。',
-
-        'title_format_error': 'テキスト構文エラー',
-        'messages_unbalanced_brackets': '括弧が適切に閉じられていません。',
-        
-        'title_clear_confirm': 'クリア確認',
-        'message_prompt_cleared': '作成したプロンプトを消去します。本当によろしいですか？',
-
-        'title_delete_confirm': '削除確認',
-        'message_item_deleted': '選択したアイテムを削除します。削除していいですか？',
-        'message_item_deleted_with_children': '配下のアイテムも一緒にすべて削除されます。削除していいですか？',
-
-        'title_prompt_info': '情報',
-        'message_prompt_listitem_notfound': '一覧表示できるファイルがありません。',
-        'title_close': '閉じる',
-
-        'title_save_json': '辞書セーブ',
-        'message_save_json_complete': '辞書ファイルを保存しました。',
-        'title_save_json_error': '辞書セーブエラー',
-        'message_save_json_notcomplete': '辞書ファイルの保存に失敗しました: ',
-        
-        'title_exit_confirm': '終了前確認',
-        'message_autosave_disabled_confirm': '\'辞書オートセーブ\'が無効になっています。アプリを終了してもいいですか？ \nアプリを終了する場合は\'OK\'を押してください。\n終了前に辞書を保存したい場合は\'キャンセル\'を押してから、\'辞書セーブ\'ボタンを押してください。'
+        'select_error': '選択エラー',
+        'delete_error': '削除エラー',
+        'update_error': '更新エラー',
+        'update_complete': '更新完了',
+        'copy_complete': 'コピー完了',
+        'format_error': 'テキスト構文エラー',
+        'unbalanced_brackets': '括弧が適切に閉じられていません。',
+        'clear_confirm': 'クリア確認',
+        'delete_confirm': '削除確認',
+        'prompt_info': '情報',
+        'prompt_listitemnotfound': '一覧表示できるファイルがありません。',
+        'close': '閉じる',
+        'prompt_created': '作成したプロンプトをクリップボードにコピーしました。',
+        'prompt_cleared': '作成したプロンプトを消去します。本当によろしいですか？',
+        'item_deleted': '選択したアイテムを削除します。削除していいですか？',
+        'item_deleted_with_children': '配下のアイテムも一緒にすべて削除されます。削除していいですか？',
+        'favparent_deletion_error': 'お気に入りの親アイテムは削除できません。', 
+        'item_updated': 'アイテムが更新されました。',
+        'item_exists': '他の親アイテムと内容が一致しています。同じ内容を登録することはできません。',
+        'text_empty': 'テキストボックスが空です。',
+        'select_item': '更新対象アイテムを選択してください。',
+        'select_item_to_delete': '削除対象アイテムを選択してください。',
+        'parent_needs_child': '親アイテムには最低一つの子アイテムが必要です。',
+        'parent_needs_one': '親アイテムは最低一つ残す必要があります。',
+        'fav_info': 'お気に入り追加完了',
+        'fav_complete': ' をお気に入りに追加しました。', # 先頭にスペース入れる
+        'select_favitem': 'お気に入りに追加するアイテムを選択してください。',
+        'check_autosave_json': '辞書オートセーブ',
+        'save_json': '辞書セーブ',
+        'exit_confirm': '終了前確認',
+        'autosave_disabled_confirm': '\'辞書オートセーブ\'が無効になっています。アプリを終了してもいいですか？ \nアプリを終了する場合は\'OK\'を押してください。\n終了前に辞書を保存したい場合は\'キャンセル\'を押してから、\'辞書セーブ\'ボタンを押してください。'
     },
     'en': {
-        'button_add_parent': 'Add Parent',
-        'button_add_child': 'Add Child',
-        'button_expand': '+',
-        'button_collapse': '-',
-        'button_delete': 'Delete',
-        'check_autosave_json': 'Auto Save dicts.',
-        'button_save_json': 'Save dicts.',
-        
-        'button_update': 'Update',
-        'button_list': 'List',
-        'button_load': 'Load',
-        'button_save': 'Save',
-        'button_copy': 'Copy',
-        'button_shuffle': 'Shuffle',
+        'add_parent': 'Add Parent',
+        'add_child': 'Add Child',
+        'expand': '+',
+        'collapse': '-',
+        'delete': 'Delete',
+        'update': 'Update',
         'check_lock': 'Lock',
-        'button_clear': 'Clear',
-        'button_add_fav': 'Add to Favorites',
-        'button_close': 'Close',
-        
+        'list': 'List',
+        'load': 'Load',
+        'save': 'Save',
+        'copy': 'Copy',
+        'shuffle': 'Shuffle',
+        'clear': 'Clear',
+        'add_fav': 'Add to Favorites',
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
         'tab_favorites':  '  Favorites  ',
-        'title_load': 'Load',
-        'message_load': 'File loaded successfully.',
-        'title_save': 'Save',
-        'message_save': 'File saved successfully.',
-        'message_text_empty': 'Textbox is empty.',
-
-        'title_fav_info': 'Fav Complete',
-        'message_fav_complete': ' is added to Favorites.',  # 先頭にスペース入れる
-
-        'title_select_error': 'Selection Error',
-        'message_select_favitem': 'Select an item to add to Favorites.',
-        'message_select_item_to_add': 'Select a place to add a child item.',
-
-        'title_delete_error': 'Deletion Error',
-        'message_select_item_to_delete': 'Please select an item to delete.',
-        'message_favparent_deletion_error': 'Parent items of Fav. cannot be deleted.',
-        'message_parent_needs_child': 'A parent item must have at least one child item.',
-        'message_parent_needs_one': 'At least one parent item must remain.',
-
-        'title_update_error': 'Update Error',
-        'message_select_item': 'Please select an item to update.',
-        'message_item_exists': 'Another parent item with the same content already exists. Cannot register the same content.',
-
-        'title_update_complete': 'Update Completed',
-        'message_item_updated': 'Item has been updated.',
-
-        'title_copy_complete': 'Copy Complete',
-        'message_prompt_created': 'Prompt copied to clipboard.',
-
-        'title_format_error': 'Text format Error',
-        'messages_unbalanced_brackets': 'Unbalanced brackets Error.',
-        
-        'title_clear_confirm': 'Clear Confirmation',
-        'message_prompt_cleared': 'Are you sure you want to clear the created prompt?',
-
-        'title_delete_confirm': 'Delete Confirmation',
-        'message_item_deleted': 'Are you sure you want to delete the selected item?',
-        'message_item_deleted_with_children': 'All items under the selected item will also be deleted. Are you sure?',
-
-        'title_prompt_info': 'Info',
-        'message_prompt_listitem_notfound': 'No files found to list.',
-        'title_close': 'Close',
-
-        'title_save_json': 'Save dicts.',
-        'message_save_json_complete': 'Save dicts. Completed.',
-        'title_save_json_error': 'Save dicts. Error',
-        'message_save_json_notcomplete': 'Save dicts. Failed: ',
-        
-        'title_exit_confirm': 'Exit Confirmation',
-        'message_autosave_disabled_confirm': '\'Auto save dicts.\' is disabled. Are you sure you want to exit the application? \nPress \'OK\' to Close App. \nPress \'CANCEL\' & \'Save dicts.\' if you want to save dictionary files before exit.'
+        'select_error': 'Selection Error',
+        'delete_error': 'Deletion Error',
+        'update_error': 'Update Error',
+        'update_complete': 'Update Completed',
+        'copy_complete': 'Copy Complete',
+        'format_error': 'Text format Error.',
+        'unbalanced_brackets': 'Unbalanced brackets Error.',
+        'clear_confirm': 'Clear Confirmation',
+        'delete_confirm': 'Delete Confirmation',
+        'prompt_info': 'Info',
+        'prompt_listitemnotfound': 'No files found to list.',
+        'close': 'Close',
+        'prompt_created': 'Prompt copied to clipboard.',
+        'prompt_cleared': 'Are you sure you want to clear the created prompt?',
+        'item_deleted': 'Are you sure you want to delete the selected item?',
+        'item_deleted_with_children': 'All items under the selected item will also be deleted. Are you sure?',
+        'favparent_deletion_error': 'Parent items of Fav. cannot be deleted.', 
+        'item_updated': 'Item has been updated.',
+        'item_exists': 'Another parent item with the same content already exists. Cannot register the same content.',
+        'text_empty': 'Text box is empty.',
+        'select_item': 'Please select an item to update.',
+        'select_item_to_delete': 'Please select an item to delete.',
+        'parent_needs_child': 'A parent item must have at least one child item.',
+        'parent_needs_one': 'At least one parent item must remain.',
+        'fav_info': 'Fav Complete',
+        'fav_complete': ' is added to Favorites.', # 先頭にスペース入れる
+        'check_autosave_json': 'Auto Save dicts.',
+        'save_json': 'Save dicts.',
+        'exit_confirm': 'Exit Confirmation',
+        'autosave_disabled_confirm': '\'Auto save dicts.\' is disabled. Are you sure you want to exit the application? \nPress \'OK\' to Close App. \nPress \'CANCEL\' & \'Save dicts.\' if you want to save dictionary files before exit.'
     }
 }
 
@@ -309,23 +261,23 @@ class PromptConstructorMain:
         self.button_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
         # 「親追加」ボタン
-        self.add_parent_button = tk.Button(self.button_frame, text=messages[lang]['button_add_parent'], width=10, command=self.on_add_parent_button_click)
+        self.add_parent_button = tk.Button(self.button_frame, text=messages[lang]['add_parent'], width=10, command=self.on_add_parent_button_click)
         self.add_parent_button.pack(side=tk.LEFT)
 
         # 「子追加」ボタン
-        self.add_child_button = tk.Button(self.button_frame, text=messages[lang]['button_add_child'], width=10, command=self.on_add_child_button_click)
+        self.add_child_button = tk.Button(self.button_frame, text=messages[lang]['add_child'], width=10, command=self.on_add_child_button_click)
         self.add_child_button.pack(side=tk.LEFT)
 
         # 「展開」ボタン
-        self.expand_button = tk.Button(self.button_frame, text=messages[lang]['button_expand'], width=3, command=self.expand_all)
+        self.expand_button = tk.Button(self.button_frame, text=messages[lang]['expand'], width=3, command=self.expand_all)
         self.expand_button.pack(side=tk.LEFT)
 
         # 「閉じる」ボタン
-        self.collapse_button = tk.Button(self.button_frame, text=messages[lang]['button_collapse'], width=3, command=self.collapse_all)
+        self.collapse_button = tk.Button(self.button_frame, text=messages[lang]['collapse'], width=3, command=self.collapse_all)
         self.collapse_button.pack(side=tk.LEFT)
 
         # 「削除」ボタン
-        self.delete_button = tk.Button(self.button_frame, text=messages[lang]['button_delete'], width=6, command=self.on_delete_button_click)
+        self.delete_button = tk.Button(self.button_frame, text=messages[lang]['delete'], width=6, command=self.on_delete_button_click)
         self.delete_button.pack(side=tk.RIGHT)
 
         # タブコントロールの作成
@@ -411,7 +363,7 @@ class PromptConstructorMain:
         self.right_frame.add(self.right_frame_top)
 
         # 「更新」ボタン
-        self.update_button = tk.Button(self.right_frame_top, text=messages[lang]['button_update'], width=self.button_width1, command=self.on_update_button_click)
+        self.update_button = tk.Button(self.right_frame_top, text=messages[lang]['update'], width=self.button_width1, command=self.on_update_button_click)
         self.update_button.pack(side=tk.LEFT, padx=5)
 
         # 上部テキストボックス
@@ -428,23 +380,23 @@ class PromptConstructorMain:
         self.button_vertical_frame.pack(side=tk.LEFT, padx=5)
 
         # 「一覧」ボタンを追加
-        self.list_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_list'], width=self.button_width1, command=self.on_list_button_click)
+        self.list_button = tk.Button(self.button_vertical_frame, text=messages[lang]['list'], width=self.button_width1, command=self.on_list_button_click)
         self.list_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 「ロード」ボタンの追加
-        self.load_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_load'], width=self.button_width1, command=self.on_load_button_click)
+        self.load_button = tk.Button(self.button_vertical_frame, text=messages[lang]['load'], width=self.button_width1, command=self.on_load_button_click)
         self.load_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 「セーブ」ボタンの追加
-        self.save_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_save'], width=self.button_width1, command=self.on_save_button_click)
+        self.save_button = tk.Button(self.button_vertical_frame, text=messages[lang]['save'], width=self.button_width1, command=self.on_save_button_click)
         self.save_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 「コピー」ボタン
-        self.copy_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy_button_click)
+        self.copy_button = tk.Button(self.button_vertical_frame, text=messages[lang]['copy'], width=self.button_width1, command=self.on_copy_button_click)
         self.copy_button.pack(side=tk.TOP, pady=(60, 0))
 
         # 「シャッフル」ボタン
-        self.shuffle_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_shuffle'], width=self.button_width1, command=self.on_shuffle_button_click)
+        self.shuffle_button = tk.Button(self.button_vertical_frame, text=messages[lang]['shuffle'], width=self.button_width1, command=self.on_shuffle_button_click)
         self.shuffle_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 「ロック」チェックボックスとラベル
@@ -453,7 +405,7 @@ class PromptConstructorMain:
         self.lock_checkbox.pack(side=tk.TOP, pady=(60, 0))  # 上方向、間隔を少し広めに取る
 
         # 「クリア」ボタン
-        self.clear_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_clear'], width=self.button_width1, command=self.on_clear_button_click)
+        self.clear_button = tk.Button(self.button_vertical_frame, text=messages[lang]['clear'], width=self.button_width1, command=self.on_clear_button_click)
         self.clear_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 下部テキストボックス(プロンプト欄)
@@ -473,7 +425,7 @@ class PromptConstructorMain:
         self.autosave_json_checkbox.pack(side=tk.LEFT)
 
         # 「辞書セーブ」ボタン
-        self.save_json_button = tk.Button(self.json_options_frame, text=messages[lang]['button_save_json'], width=10, command=self.save_dicts_to_json)
+        self.save_json_button = tk.Button(self.json_options_frame, text=messages[lang]['save_json'], width=10, command=self.save_dicts_to_json)
         self.save_json_button.pack(side=tk.RIGHT, padx=15)
 
         # JSONファイルのロード
@@ -822,10 +774,10 @@ class PromptConstructorMain:
             if selected_item:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
-                    menu.add_command(label=messages[lang]['button_add_fav'], command=self.add_to_favorites)
-                    menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
+                    menu.add_command(label=messages[lang]['add_fav'], command=self.add_to_favorites)
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
                 else:  # 親アイテムが選択されている場合
-                    menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
             self.delete_button.config(state=tk.NORMAL)
             self.update_button.config(state=tk.NORMAL)
 
@@ -834,7 +786,7 @@ class PromptConstructorMain:
             if selected_item:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
-                    menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
+                    menu.add_command(label=messages[lang]['delete'], command=self.on_delete_button_click)
                     self.delete_button.config(state=tk.NORMAL)
                     self.update_button.config(state=tk.NORMAL)
                 else:  # 親アイテムが選択されている場合
@@ -869,9 +821,9 @@ class PromptConstructorMain:
 
                 # 子アイテムとして追加
                 self.tree3.insert(favorites_parent, "end", text=item_text)
-                messagebox.showinfo(messages[lang]['title_fav_info'], item_text + messages[lang]['message_fav_complete'])
+                messagebox.showinfo(messages[lang]['fav_info'], item_text + messages[lang]['fav_complete'])
             else:
-                messagebox.showinfo(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
+                messagebox.showinfo(messages[lang]['select_error'], messages[lang]['select_favitem'])
 
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
     # 表示しているタブによる分岐処理は未記載
@@ -918,7 +870,7 @@ class PromptConstructorMain:
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_select_error'], messages[lang]['message_select_item_to_add'])
+                messagebox.showinfo(messages[lang]['select_error'], messages[lang]['select_item_to_delete'])
             return
 
         parent_item = tree.parent(selected_item[0])
@@ -954,13 +906,13 @@ class PromptConstructorMain:
             if tree == self.tree3:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
-                    result = messagebox.askokcancel(messages[lang]['title_delete_confirm'], messages[lang]['message_item_deleted'])
+                    result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
                     if result:
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
                             self.save_dicts_to_json()
                 else:  # 親アイテムが選択されている場合
-                    messagebox.showerror(messages[lang]['title_delete_error'], messages[lang]['message_favparent_deletion_error'])
+                    messagebox.showerror(messages[lang]['delete_error'], messages[lang]['favparent_deletion_error'])
                     return
             # それ以外のタブのアイテム選択時
             else:
@@ -970,10 +922,10 @@ class PromptConstructorMain:
                     # children = tree.get_children(parent_item)
                     # if len(children) == 1:
                     #     if messages_enabled:
-                    #         messagebox.showinfo(messages[lang]['title_delete_error'], messages[lang]['message_parent_needs_child'])
+                    #         messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_child'])
                     #     return
                     # else:
-                    result = messagebox.askokcancel(messages[lang]['title_delete_confirm'], messages[lang]['message_item_deleted'])
+                    result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted'])
                     if result:
                         # 削除前に前後のアイテムを記憶しておく
                         previous_item = tree.prev(selected_item[0])
@@ -995,10 +947,10 @@ class PromptConstructorMain:
                     children = tree.get_children(selected_item[0])
                     if len(tree.get_children()) == 1:
                         if messages_enabled:
-                            messagebox.showinfo(messages[lang]['title_delete_error'], messages[lang]['message_parent_needs_one'])
+                            messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['parent_needs_one'])
                         return
                     elif children:
-                        result = messagebox.askokcancel(messages[lang]['title_delete_confirm'], messages[lang]['message_item_deleted_with_children'])
+                        result = messagebox.askokcancel(messages[lang]['delete_confirm'], messages[lang]['item_deleted_with_children'])
                         if result:
                             # 削除前に前後のアイテムを記憶しておく
                             previous_item = tree.prev(selected_item[0])
@@ -1035,7 +987,7 @@ class PromptConstructorMain:
                             self.save_dicts_to_json()
         else:
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_delete_error'], messages[lang]['message_select_item_to_delete'])
+                messagebox.showinfo(messages[lang]['delete_error'], messages[lang]['select_item_to_delete'])
             return
 
 
@@ -1053,13 +1005,13 @@ class PromptConstructorMain:
         selected_item = tree.selection()
         if not selected_item:
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_select_item'])
+                messagebox.showinfo(messages[lang]['update_error'], messages[lang]['select_item'])
             return
 
         new_text = self.text_box_top.get(1.0, tk.END).strip()
         if not new_text:
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_text_empty'])
+                messagebox.showinfo(messages[lang]['update_error'], messages[lang]['text_empty'])
             return
 
         parent_item = tree.parent(selected_item[0])
@@ -1067,21 +1019,21 @@ class PromptConstructorMain:
             for item in tree.get_children():
                 if item != selected_item[0] and tree.item(item, "text") == new_text:
                     if messages_enabled:
-                        messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_item_exists'])
+                        messagebox.showinfo(messages[lang]['update_error'], messages[lang]['item_exists'])
                     return
 
         tree.item(selected_item[0], text=new_text)
         if autosave_json_enabled:
             self.save_dicts_to_json()
         if messages_enabled:
-            messagebox.showinfo(messages[lang]['title_update_complete'], messages[lang]['message_item_updated'])
+            messagebox.showinfo(messages[lang]['update_complete'], messages[lang]['item_updated'])
 
     def on_list_button_click(self):
         prompt_folder = 'prompt'
         files = glob(os.path.join(prompt_folder, "prompt_saved_*.txt"))
         
         if not files:
-            messagebox.showinfo(messages[lang]['title_prompt_info'], messages[lang]['message_prompt_listitem_notfound'])
+            messagebox.showinfo(messages[lang]['prompt_info'], messages[lang]['prompt_listitemnotfound'])
             return
 
         # 最新の5つのファイルを取得
@@ -1116,7 +1068,7 @@ class PromptConstructorMain:
             page_button.pack(side=tk.LEFT, padx=5)
 
         # 閉じるボタンを右端に配置
-        close_button = tk.Button(self.page_button_frame, text=messages[lang]['button_close'], command=self.list_window.destroy, width=self.button_width1)
+        close_button = tk.Button(self.page_button_frame, text=messages[lang]['close'], command=self.list_window.destroy, width=self.button_width1)
         close_button.pack(side=tk.RIGHT, padx=5)
 
     def load_page(self, files, page):
@@ -1148,7 +1100,7 @@ class PromptConstructorMain:
             page_button.pack(side=tk.LEFT, padx=5)
 
         # 閉じるボタンを右端に配置
-        close_button = tk.Button(self.page_button_frame, text=messages[lang]['title_close'], command=self.list_window.destroy, width=self.button_width1)
+        close_button = tk.Button(self.page_button_frame, text=messages[lang]['close'], command=self.list_window.destroy, width=self.button_width1)
         close_button.pack(side=tk.RIGHT, padx=5)
 
     def open_prompt(self, content):
@@ -1170,12 +1122,12 @@ class PromptConstructorMain:
                 self.text_box_bottom.insert(tk.END, content)
                 self.undo_history.append(content)
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_load'], messages[lang]['message_load'])
+                messagebox.showinfo(messages[lang]['load'], messages[lang]['load_message'])
 
     def on_save_button_click(self):
         if not self.text_box_bottom.get(1.0, tk.END).strip():
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_save'], messages[lang]['message_text_empty'])
+                messagebox.showinfo(messages[lang]['save'], messages[lang]['text_empty'])
             return
         
         from tkinter import filedialog
@@ -1190,14 +1142,14 @@ class PromptConstructorMain:
                 # file.write(self.text_box_bottom.get(1.0, tk.END).strip())
                 file.write(self.text_box_bottom.get(1.0, tk.END))  # ファイル末尾の空白をそのまま残したいのでこちらを採用
             if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_save'], messages[lang]['message_save'])
+                messagebox.showinfo(messages[lang]['save'], messages[lang]['save_message'])
 
     def on_copy_button_click(self):
         self.root.clipboard_clear()
         self.root.clipboard_append(self.text_box_bottom.get(1.0, tk.END).strip())
         self.root.update()
         if messages_enabled:
-            messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_prompt_created'])
+            messagebox.showinfo(messages[lang]['copy_complete'], messages[lang]['prompt_created'])
 
     def on_shuffle_button_click(self):
         # プロンプト欄のテキストを取得
@@ -1220,7 +1172,7 @@ class PromptConstructorMain:
         # 括弧が適切に閉じられていない場合はメッセージを表示して処理を終了
         if not words:
             # split_wordsのほうでメッセージ出すのでここはコメントアウト
-            # messagebox.showinfo(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
+            # messagebox.showinfo(messages[lang]['format_error'], messages[lang]['unbalanced_brackets'])
             return
 
         # 単語をシャッフル
@@ -1266,11 +1218,11 @@ class PromptConstructorMain:
                         current_word += char
                     else:
                         # 括弧が閉じられていない場合はエラー処理
-                        messagebox.showerror(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
+                        messagebox.showinfo(messages[lang]['format_error'], messages[lang]['unbalanced_brackets'])
                         return []  # 空のリストを返す
                 else:
                     # 括弧が閉じられていない場合はエラー処理
-                    messagebox.showerror(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
+                    messagebox.showinfo(messages[lang]['format_error'], messages[lang]['unbalanced_brackets'])
                     return []  # 空のリストを返す
             elif char == "," and not bracket_stack:
                 words.append(current_word.strip())
@@ -1283,7 +1235,7 @@ class PromptConstructorMain:
 
         # もし括弧が閉じられていない場合、最後の単語を追加
         if bracket_stack:
-            messagebox.showerror(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
+            messagebox.showinfo(messages[lang]['format_error'], messages[lang]['unbalanced_brackets'])
             return []  # 空のリストを返す
 
         return words
@@ -1297,7 +1249,7 @@ class PromptConstructorMain:
             self.clear_button.config(state=tk.NORMAL)  # クリアボタンを有効にする
 
     def on_clear_button_click(self):
-        result = messagebox.askokcancel(messages[lang]['title_clear_confirm'], messages[lang]['message_prompt_cleared'])
+        result = messagebox.askokcancel(messages[lang]['clear_confirm'], messages[lang]['prompt_cleared'])
         if result:
             self.text_box_bottom.delete(1.0, tk.END)
 
@@ -1390,42 +1342,37 @@ class PromptConstructorMain:
 
 
     def save_dicts_to_json(self):
-        try:
-            # dict_chunks.jsonの保存
-            data1 = {}
-            for parent_item in self.tree1.get_children():
-                parent_text = self.tree1.item(parent_item, "text")
-                children_texts = [self.tree1.item(child, "text") for child in self.tree1.get_children(parent_item)]
-                data1[parent_text] = children_texts
+        # dict_chunks.jsonの保存
+        data1 = {}
+        for parent_item in self.tree1.get_children():
+            parent_text = self.tree1.item(parent_item, "text")
+            children_texts = [self.tree1.item(child, "text") for child in self.tree1.get_children(parent_item)]
+            data1[parent_text] = children_texts
 
-            with open('dict_chunks.json', 'w', encoding='utf-8') as file:
-                json.dump(data1, file, ensure_ascii=False, indent=4)
+        with open('dict_chunks.json', 'w', encoding='utf-8') as file:
+            json.dump(data1, file, ensure_ascii=False, indent=4)
 
-            # dict_words.jsonの保存
-            data2 = {}
-            for parent_item in self.tree2.get_children():
-                parent_text = self.tree2.item(parent_item, "text")
-                children_texts = [self.tree2.item(child, "text") for child in self.tree2.get_children(parent_item)]
-                data2[parent_text] = children_texts
+        # dict_words.jsonの保存
+        data2 = {}
+        for parent_item in self.tree2.get_children():
+            parent_text = self.tree2.item(parent_item, "text")
+            children_texts = [self.tree2.item(child, "text") for child in self.tree2.get_children(parent_item)]
+            data2[parent_text] = children_texts
 
-            with open('dict_words.json', 'w', encoding='utf-8') as file:
-                json.dump(data2, file, ensure_ascii=False, indent=4)
+        with open('dict_words.json', 'w', encoding='utf-8') as file:
+            json.dump(data2, file, ensure_ascii=False, indent=4)
 
-            # dict_favorites.jsonの保存
-            data3 = {}
-            for parent_item in self.tree3.get_children():
-                parent_text = self.tree3.item(parent_item, "text")
-                children_texts = [self.tree3.item(child, "text") for child in self.tree3.get_children(parent_item)]
-                data3[parent_text] = children_texts
+        # dict_favorites.jsonの保存
+        data3 = {}
+        for parent_item in self.tree3.get_children():
+            parent_text = self.tree3.item(parent_item, "text")
+            children_texts = [self.tree3.item(child, "text") for child in self.tree3.get_children(parent_item)]
+            data3[parent_text] = children_texts
 
-            with open('dict_favorites.json', 'w', encoding='utf-8') as file:
-                json.dump(data3, file, ensure_ascii=False, indent=4)
-            
-            if not autosave_json_enabled:
-                if messages_enabled:
-                    messagebox.showinfo(messages[lang]['title_save_json'], messages[lang]['message_save_json_complete'])
-        except Exception as e:
-            messagebox.showerror(messages[lang]['title_save_json_error'], messages[lang]['message_save_json_notcomplete'] + str(e))
+        with open('dict_favorites.json', 'w', encoding='utf-8') as file:
+            json.dump(data3, file, ensure_ascii=False, indent=4)
+
+
 
 
     def on_tab_changed(self, event):
@@ -1549,7 +1496,7 @@ class PromptConstructorMain:
     
     def on_exit(self):
         if not autosave_json_enabled:
-            result = messagebox.askokcancel(messages[lang]['title_exit_confirm'], messages[lang]['message_autosave_disabled_confirm'])
+            result = messagebox.askokcancel(messages[lang]['exit_confirm'], messages[lang]['autosave_disabled_confirm'])
             if result:
                 # 空でもtmpファイル作る
                 self.save_prompt_and_close()
