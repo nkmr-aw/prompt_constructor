@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.5.1"
+version = "1.0.6"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -498,6 +498,7 @@ class PromptConstructorMain:
         # キーバインドの設定
         self.root.bind("<Control-z>", self.undo)
         self.root.bind("<Control-y>", self.redo)
+        self.root.bind("<Escape>", self.on_exit)  # ESCボタンにon_exitメソッドをバインド
 
         # 過去に自動保存されたtmpファイルを読み込む(text_box_bottomが配置された後でないと動作しないので注意)
         self.load_latest_prompt_file()
@@ -659,14 +660,25 @@ class PromptConstructorMain:
 
         # 現在の選択範囲を取得
         try:
-            start = text_widget.index("sel.first")
-            end = text_widget.index("sel.last")
+            start = text_widget.index(tk.SEL_FIRST)
+            end = text_widget.index(tk.SEL_LAST)
         except tk.TclError:
             # 選択範囲がない場合は何もしない
             return
 
         # 選択されたテキストを取得
         selected_text = text_widget.get(start, end)
+
+        # 選択範囲の先頭に"("があれば、それを選択範囲から除外
+        if selected_text.startswith("("):
+            selected_text = selected_text[1:]  # 先頭の"("を除外
+            start = f"{start}+1c"  # 新しい開始位置を更新
+            text_widget.mark_set(tk.INSERT, start)  # キャレットの位置を更新
+
+        colon_index = selected_text.find(":")
+        if colon_index != -1:
+            selected_text = selected_text[:colon_index]  # ":"以降を除外
+            end = start  # 新しい終了位置を開始位置に設定
 
         # 末尾のカンマやピリオドを除去
         cleaned_text = re.sub(r'[,.]+$', '', selected_text)  # 末尾のカンマやピリオドをすべて削除
@@ -1218,7 +1230,7 @@ class PromptConstructorMain:
         # 括弧で囲まれた単語を分割
         words = self.split_words(text_to_shuffle)
 
-        # 括弧が適切に閉じられていない場合はメッセージを表示して処理を終了
+        # 括弧が適切に閉じられていない場合は処理を終了
         if not words:
             # split_wordsのほうでメッセージ出すのでここはコメントアウト
             # messagebox.showinfo(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
@@ -1229,6 +1241,15 @@ class PromptConstructorMain:
 
         # シャッフル後のテキストを結合
         shuffled_text = ", ".join(words).strip(", ")  # スペース区切りからカンマ区切りに変更し、末尾のカンマを削除
+
+        # 複数のカンマを一つのカンマに置換
+        shuffled_text = re.sub(r',+', ',', shuffled_text)
+
+        # ", , "を", "に置換
+        shuffled_text = re.sub(r',\s*,', ', ', shuffled_text)
+
+        # 複数のスペースを一つのスペースに置換
+        shuffled_text = re.sub(r'\s+', ' ', shuffled_text)
 
         # 末尾が単語で終わっている場合、", "を追加
         if shuffled_text:
@@ -1548,7 +1569,7 @@ class PromptConstructorMain:
         # 少し待ってからウィンドウを閉じる
         self.root.after(100, self.root.destroy)
     
-    def on_exit(self):
+    def on_exit(self, event=None):
         if not autosave_json_enabled:
             result = messagebox.askokcancel(messages[lang]['title_exit_confirm'], messages[lang]['message_autosave_disabled_confirm'])
             if result:
