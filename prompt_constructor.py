@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.7"
+version = "1.0.8"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -119,7 +119,8 @@ messages = {
         'button_clear': 'クリア',
         'button_add_fav': 'お気に入りに追加',
         'button_close': '閉じる',
-        
+        'label_search': '検索',
+
         'tab_chunks': '  チャンク  ',
         'tab_words':  '    単語    ',
         'tab_favorites':  ' お気に入り ',
@@ -195,6 +196,7 @@ messages = {
         'button_clear': 'Clear',
         'button_add_fav': 'Add to Favorites',
         'button_close': 'Close',
+        'label_search': 'Search',
         
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
@@ -425,7 +427,7 @@ class PromptConstructorMain:
         self.copy2_button.pack(side=tk.TOP, pady=(5, 0))
         
         # 上部テキストボックス
-        self.text_box_top = tk.Text(self.right_frame_top, height=10)
+        self.text_box_top = tk.Text(self.right_frame_top, height=5)
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_top.config(font=(textfont, fontsize_textbox))
 
@@ -436,11 +438,11 @@ class PromptConstructorMain:
 
         # 下部フレームに脇にボタンを縦に配置するためのフレーム
         self.button_vertical_frame = tk.Frame(self.right_frame_bottom)
-        self.button_vertical_frame.pack(side=tk.LEFT, padx=5)
+        self.button_vertical_frame.pack(side=tk.LEFT, padx=5, pady=0)
 
         # 「一覧」ボタンを追加
         self.list_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_list'], width=self.button_width1, command=self.on_list_button_click)
-        self.list_button.pack(side=tk.TOP, pady=(5, 0))
+        self.list_button.pack(side=tk.TOP)
 
         # 「ロード」ボタンの追加
         self.load_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_load'], width=self.button_width1, command=self.on_load_button_click)
@@ -452,7 +454,7 @@ class PromptConstructorMain:
 
         # 「コピー」ボタン(プロンプト欄のテキストをコピーする)
         self.copy_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy_button_click)
-        self.copy_button.pack(side=tk.TOP, pady=(60, 0))
+        self.copy_button.pack(side=tk.TOP, pady=(40, 0))
 
         # 「シャッフル」ボタン
         self.shuffle_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_shuffle'], width=self.button_width1, command=self.on_shuffle_button_click)
@@ -461,17 +463,39 @@ class PromptConstructorMain:
         # 「ロック」チェックボックスとラベル
         self.lock_var = tk.BooleanVar(value=False)  # ロック状態を管理する変数
         self.lock_checkbox = tk.Checkbutton(self.button_vertical_frame, text=messages[lang]['check_lock'], variable=self.lock_var, command=self.toggle_lock)
-        self.lock_checkbox.pack(side=tk.TOP, pady=(60, 0))  # 上方向、間隔を少し広めに取る
+        self.lock_checkbox.pack(side=tk.TOP, pady=(40, 0))  # 上方向、間隔を少し広めに取る
 
         # 「クリア」ボタン
         self.clear_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_clear'], width=self.button_width1, command=self.on_clear_button_click)
-        self.clear_button.pack(side=tk.TOP, pady=(5, 0))
+        self.clear_button.pack(side=tk.TOP, pady=(5, 40))
 
         # 下部テキストボックス(プロンプト欄)
         self.text_box_bottom = tk.Text(self.right_frame_bottom, height=10)
         self.text_box_bottom.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_bottom.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_bottom.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
+        # ハイライトスタイルを設定
+        # self.text_box_bottom.tag_config("highlight", background="yellow", foreground="black")  # 文字色を黒に設定
+
+        # 検索欄
+        # self.text_box_search = tk.Text(self.right_frame_bottom, height=1)
+        self.text_box_search = EntryWithPlaceholder(self.right_frame_bottom, placeholder=messages[lang]['label_search'], color='gray')
+        self.text_box_search.pack()
+        self.text_box_search.pack(fill=tk.BOTH, padx=5, pady=5)
+        self.text_box_search.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
+        self.text_box_search.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
+
+        # イベントバインド
+        self.text_box_search.bind("<<Modified>>", self.on_entry_change)
+        self.text_box_search.bind('<KeyRelease>', self.update_highlight)
+        self.text_box_bottom.bind('<ButtonRelease-1>', self.update_highlight)  # マウスボタンが離されたときに呼び出す
+        self.text_box_bottom.bind('<B1-Motion>', self.update_highlight)  # ドラッグ中に呼び出す
+        self.text_box_bottom.bind('<KeyRelease>', self.update_highlight)
+        self.text_box_bottom.bind('<<Selection>>', self.update_highlight)
+        self.text_box_bottom.bind('<Control-a>', self.update_highlight)
+        # 右クリックメニューからの選択にも対応
+        self.text_box_bottom.bind('<<Paste>>', self.update_highlight)
+
 
         # JSON保存関連のチェックボックスとボタンを配置するフレーム
         self.json_options_frame = tk.Frame(self.left_frame)
@@ -1344,6 +1368,78 @@ class PromptConstructorMain:
         if result:
             self.text_box_bottom.delete(1.0, tk.END)
 
+    def update_highlight(self, event=None):
+        # Entryウィジェットから検索テキストを取得
+        input_text = self.text_box_search.get().strip()
+
+        # プレースホルダーテキストの場合は空文字列として扱う
+        if input_text == self.text_box_search.placeholder:
+            input_text = ""
+
+        # すべてのタグを削除
+        self.text_box_bottom.tag_remove("highlight", "1.0", tk.END)
+        self.text_box_bottom.tag_remove("selected", "1.0", tk.END)
+        self.text_box_bottom.tag_remove("selected_highlight", "1.0", tk.END)
+
+        # 選択範囲の取得
+        try:
+            sel_start = self.text_box_bottom.index(tk.SEL_FIRST)
+            sel_end = self.text_box_bottom.index(tk.SEL_LAST)
+            self.text_box_bottom.tag_add("selected", sel_start, sel_end)
+        except tk.TclError:
+            sel_start = sel_end = None
+
+        # 検索文字列のハイライト
+        if input_text:
+            start_index = "1.0"
+            while True:
+                start_index = self.text_box_bottom.search(input_text, start_index, stopindex=tk.END)
+                if not start_index:
+                    break
+                end_index = f"{start_index}+{len(input_text)}c"
+                self.text_box_bottom.tag_add("highlight", start_index, end_index)
+                start_index = end_index
+
+        # 選択範囲と検索ハイライトの重複を処理
+        if sel_start and sel_end:
+            highlight_ranges = self.text_box_bottom.tag_ranges("highlight")
+            for i in range(0, len(highlight_ranges), 2):
+                h_start, h_end = highlight_ranges[i], highlight_ranges[i + 1]
+
+                # インデックスを比較可能な形式に変換
+                sel_start_parts = list(map(int, self.text_box_bottom.index(sel_start).split('.')))
+                sel_end_parts = list(map(int, self.text_box_bottom.index(sel_end).split('.')))
+                h_start_parts = list(map(int, self.text_box_bottom.index(h_start).split('.')))
+                h_end_parts = list(map(int, self.text_box_bottom.index(h_end).split('.')))
+
+                # 開始位置の最大値と終了位置の最小値を計算
+                overlap_start_parts = max(sel_start_parts, h_start_parts)
+                overlap_end_parts = min(sel_end_parts, h_end_parts)
+
+                # 結果をTkinterのインデックス形式に戻す
+                overlap_start = f"{overlap_start_parts[0]}.{overlap_start_parts[1]}"
+                overlap_end = f"{overlap_end_parts[0]}.{overlap_end_parts[1]}"
+
+                if self.text_box_bottom.compare(overlap_start, "<", overlap_end):
+                    self.text_box_bottom.tag_add("selected_highlight", overlap_start, overlap_end)
+
+        # タグの優先順位とスタイルを設定
+        self.text_box_bottom.tag_raise("selected_highlight", "highlight")
+        self.text_box_bottom.tag_raise("selected_highlight", "selected")
+
+        self.text_box_bottom.tag_config("highlight", background="yellow", foreground="black")
+        self.text_box_bottom.tag_config("selected", background="SystemHighlight", foreground="SystemHighlightText")
+        self.text_box_bottom.tag_config("selected_highlight", background="red", foreground="white")
+
+
+    def on_entry_change(*args):
+        # エントリーの内容が変更されたときに呼び出される関数
+        # content = entry.get()
+        # if content != entry.placeholder:
+        #     print(f"検索内容: {content}")
+        pass
+
+
     def ensure_prompt_files_exist(self):
         # dict_chunks.jsonの存在チェックと作成
         if not os.path.exists('dict_chunks.json'):
@@ -1394,6 +1490,7 @@ class PromptConstructorMain:
                 data = json.load(file)
             with open('bk/dict_favorites_bk.json', 'w', encoding='utf-8') as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
+
 
     def load_dicts_from_json(self):
         # タブ1のツリービューをクリア
@@ -1510,7 +1607,6 @@ class PromptConstructorMain:
             self.text_box_top.delete(1.0, tk.END)
 
 
-
     def load_latest_prompt_file(self):
         prompt_folder = 'prompt'
         if not os.path.exists(prompt_folder):  # フォルダの存在確認
@@ -1606,6 +1702,34 @@ class PromptConstructorMain:
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
             self.root.destroy()
+
+
+# 検索欄監視用拡張
+class EntryWithPlaceholder(tk.Entry):
+    def __init__(self, master=None, placeholder="PLACEHOLDER", color='grey'):
+        super().__init__(master)
+
+        self.placeholder = placeholder
+        self.placeholder_color = color
+        self.default_fg_color = self['fg']
+
+        self.bind("<FocusIn>", self.focus_in)
+        self.bind("<FocusOut>", self.focus_out)
+
+        self.put_placeholder()
+
+    def put_placeholder(self):
+        self.insert(0, self.placeholder)
+        self['fg'] = self.placeholder_color
+
+    def focus_in(self, *args):
+        if self['fg'] == self.placeholder_color:
+            self.delete('0', 'end')
+            self['fg'] = self.default_fg_color
+
+    def focus_out(self, *args):
+        if not self.get():
+            self.put_placeholder()
 
 
 if __name__ == "__main__":
