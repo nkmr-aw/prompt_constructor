@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.6"
+version = "1.0.7"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -151,7 +151,8 @@ messages = {
         'message_item_updated': 'アイテムが更新されました。',
 
         'title_copy_complete': 'コピー完了',
-        'message_prompt_created': '作成したプロンプトをクリップボードにコピーしました。',
+        'message_prompt_copied': '作成したプロンプトをクリップボードにコピーしました。',
+        'message_item_copied': 'アイテムテキストをクリップボードにコピーしました。',
 
         'title_format_error': 'テキスト構文エラー',
         'messages_unbalanced_brackets': '括弧が適切に閉じられていません。',
@@ -225,7 +226,8 @@ messages = {
         'message_item_updated': 'Item has been updated.',
 
         'title_copy_complete': 'Copy Complete',
-        'message_prompt_created': 'Prompt copied to clipboard.',
+        'message_prompt_copied': 'Prompt copied to clipboard.',
+        'message_item_copied': 'Item text copied to clipboard.',
 
         'title_format_error': 'Text format Error',
         'messages_unbalanced_brackets': 'Unbalanced brackets Error.',
@@ -411,14 +413,22 @@ class PromptConstructorMain:
         self.right_frame_top = tk.Frame(self.right_frame)
         self.right_frame.add(self.right_frame_top)
 
-        # 「更新」ボタン
-        self.update_button = tk.Button(self.right_frame_top, text=messages[lang]['button_update'], width=self.button_width1, command=self.on_update_button_click)
-        self.update_button.pack(side=tk.LEFT, padx=5)
+        # 下部フレームに脇にボタンを縦に配置するためのフレーム
+        self.button_vertical_frame2 = tk.Frame(self.right_frame_top)
+        self.button_vertical_frame2.pack(side=tk.LEFT, padx=5)
 
+        # 「更新」ボタン
+        self.update_button = tk.Button(self.button_vertical_frame2, text=messages[lang]['button_update'], width=self.button_width1, command=self.on_update_button_click)
+        self.update_button.pack(side=tk.TOP, pady=(5, 0))
+        # 「コピー2」ボタン(ツリービューの選択アイテムのテキストをコピーする)
+        self.copy2_button = tk.Button(self.button_vertical_frame2, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy2_button_click)
+        self.copy2_button.pack(side=tk.TOP, pady=(5, 0))
+        
         # 上部テキストボックス
         self.text_box_top = tk.Text(self.right_frame_top, height=10)
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_top.config(font=(textfont, fontsize_textbox))
+
 
         # 右ペインの下部フレーム (テキストボックスと「クリア」ボタン等)
         self.right_frame_bottom = tk.Frame(self.right_frame)
@@ -440,7 +450,7 @@ class PromptConstructorMain:
         self.save_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_save'], width=self.button_width1, command=self.on_save_button_click)
         self.save_button.pack(side=tk.TOP, pady=(5, 0))
 
-        # 「コピー」ボタン
+        # 「コピー」ボタン(プロンプト欄のテキストをコピーする)
         self.copy_button = tk.Button(self.button_vertical_frame, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy_button_click)
         self.copy_button.pack(side=tk.TOP, pady=(60, 0))
 
@@ -1089,6 +1099,17 @@ class PromptConstructorMain:
         if messages_enabled:
             messagebox.showinfo(messages[lang]['title_update_complete'], messages[lang]['message_item_updated'])
 
+    # コピー2処理を追加
+    def on_copy2_button_click(self):
+        selected_item = self.tree1.selection() or self.tree2.selection() or self.tree3.selection()
+        if selected_item:
+            item_text = self.text_box_top.get(1.0, tk.END).strip()
+            self.root.clipboard_clear()
+            self.root.clipboard_append(item_text)
+            self.root.update()
+            messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_item_copied'])
+
+
     def on_list_button_click(self):
         prompt_folder = 'prompt'
         files = glob(os.path.join(prompt_folder, "prompt_saved_*.txt"))
@@ -1210,7 +1231,7 @@ class PromptConstructorMain:
         self.root.clipboard_append(self.text_box_bottom.get(1.0, tk.END).strip())
         self.root.update()
         if messages_enabled:
-            messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_prompt_created'])
+            messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_prompt_copied'])
 
     def on_shuffle_button_click(self):
         # プロンプト欄のテキストを取得
