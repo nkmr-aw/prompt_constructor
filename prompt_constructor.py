@@ -11,7 +11,8 @@ import re
 import random
 
 
-version = "1.0.9"
+version = "1.0.10"
+
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -68,7 +69,6 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
         config.write(configfile)
 
 
-
 # 設定値のバリデーション
 lang = config['Settings']['lang']
 if lang not in ['en', 'ja']:
@@ -80,14 +80,16 @@ if increment_unit not in [0.05, 0.1]:
     messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
     sys.exit(1)
 
-fontsize_textbox = int((config['Settings'].get('fontsize_textbox', '12')))
-if not 8 <= fontsize_textbox <= 32:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox' \nIt must be between 8 and 32.")
+fontsize_min = 8
+fontsize_max = 32
+fontsize_treeview = int((config['Settings'].get('fontsize_treeview', '12')))
+if not fontsize_min <= fontsize_treeview <= fontsize_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
     sys.exit(1)
 
-fontsize_treeview = int((config['Settings'].get('fontsize_treeview', '12')))
-if not 8 <= fontsize_treeview <= 32:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview' \nIt must be between 8 and 32.")
+fontsize_textbox = int((config['Settings'].get('fontsize_textbox', '12')))
+if not fontsize_min <= fontsize_textbox <= fontsize_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
     sys.exit(1)
 
 # アイテム欄の表示行数(高さ)
@@ -334,6 +336,9 @@ class PromptConstructorMain:
         # ボタンの幅設定(例外あり)
         self.button_width1 = 8
 
+        # SHIFTキー押下判定用
+        self.is_shift_pressed = False
+
         style = ttk.Style()
         style.configure("Treeview", font=(textfont, fontsize_treeview))  # ツリービューのスタイル設定
 
@@ -510,11 +515,8 @@ class PromptConstructorMain:
         self.text_box_bottom.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_bottom.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_bottom.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
-        # ハイライトスタイルを設定
-        # self.text_box_bottom.tag_config("highlight", background="yellow", foreground="black")  # 文字色を黒に設定
-
+        
         # 検索欄
-        # self.text_box_search = tk.Text(self.right_frame_bottom, height=1)
         self.text_box_search = EntryWithPlaceholder(self.right_frame_bottom, placeholder=messages[lang]['label_search'], color='gray')
         self.text_box_search.pack()
         self.text_box_search.pack(fill=tk.BOTH, padx=5, pady=5)
@@ -531,6 +533,25 @@ class PromptConstructorMain:
         self.text_box_bottom.bind('<Control-a>', self.update_highlight)
         # 右クリックメニューからの選択にも対応
         self.text_box_bottom.bind('<<Paste>>', self.update_highlight)
+        # ファイル読み込み時
+        self.text_box_bottom.bind('<<UpdateText>>', self.update_highlight)
+
+        # マウスホイールイベントのバインド
+        self.tree1.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree1.bind("<Button-2>", self.on_mouseclick_leftpane)
+        self.tree2.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree2.bind("<Button-2>", self.on_mouseclick_leftpane)
+        self.tree3.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree3.bind("<Button-2>", self.on_mouseclick_leftpane)
+        self.text_box_top.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
+        self.text_box_top.bind("<Button-2>", self.on_mouseclick_rightpane)
+        self.text_box_bottom.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
+        self.text_box_bottom.bind("<Button-2>", self.on_mouseclick_rightpane)
+        self.text_box_search.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
+        self.text_box_search.bind("<Button-2>", self.on_mouseclick_rightpane)
+        # フォントサイズ変更関連変数 初期化
+        self.fontsize_treeview_current = fontsize_treeview
+        self.fontsize_textbox_current = fontsize_textbox
 
 
         # JSON保存関連のチェックボックスとボタンを配置するフレーム
@@ -570,6 +591,12 @@ class PromptConstructorMain:
         self.root.bind("<Control-y>", self.redo)
         self.root.bind("<Escape>", self.on_exit)
 
+        # Shift監視
+        self.root.bind("<KeyPress-Shift_L>", self.on_shift_press)
+        self.root.bind("<KeyRelease-Shift_L>", self.on_shift_release)
+        self.root.bind("<KeyPress-Shift_R>", self.on_shift_press)
+        self.root.bind("<KeyRelease-Shift_R>", self.on_shift_release)
+
         # 過去に自動保存されたtmpファイルを読み込む(text_box_bottomが配置された後でないと動作しないので注意)
         self.load_latest_prompt_file()
 
@@ -589,6 +616,13 @@ class PromptConstructorMain:
             textfont = 'TkDefaultFont'  # 利用できないフォントならTkinterのデフォルトフォントを使用
 
         self.root.mainloop()
+
+
+    def on_shift_press(self, event):
+        self.is_shift_pressed = True
+
+    def on_shift_release(self, event):
+        self.is_shift_pressed = False
 
 
     def expand_selection(self, target_text):
@@ -876,7 +910,6 @@ class PromptConstructorMain:
                         tree.item(target_item, open=True)  # 親アイテムを展開 
                     elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
                         tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
-
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
@@ -1250,6 +1283,7 @@ class PromptConstructorMain:
         self.text_box_bottom.delete(1.0, tk.END)
         self.text_box_bottom.insert(tk.END, content)
         self.undo_history.append(content)
+        self.text_box_bottom.event_generate("<<UpdateText>>")
 
     def on_load_button_click(self):
         from tkinter import filedialog
@@ -1263,6 +1297,7 @@ class PromptConstructorMain:
                 self.text_box_bottom.delete(1.0, tk.END)
                 self.text_box_bottom.insert(tk.END, content)
                 self.undo_history.append(content)
+                self.text_box_bottom.event_generate("<<UpdateText>>")
             if messages_enabled:
                 messagebox.showinfo(messages[lang]['title_load'], messages[lang]['message_load'])
 
@@ -1394,9 +1429,15 @@ class PromptConstructorMain:
     def toggle_lock(self):
         if self.lock_var.get():
             self.text_box_bottom.config(state=tk.DISABLED)  # 編集不可にする
+            self.list_button.config(state=tk.DISABLED)  # 一覧ボタンを無効にする
+            self.load_button.config(state=tk.DISABLED)  # ロードボタンを無効にする
+            self.shuffle_button.config(state=tk.DISABLED)  # シャッフルボタンを無効にする
             self.clear_button.config(state=tk.DISABLED)  # クリアボタンを無効にする
         else:
             self.text_box_bottom.config(state=tk.NORMAL)  # 編集可能にする
+            self.list_button.config(state=tk.NORMAL)  # 一覧ボタンを有効にする
+            self.load_button.config(state=tk.NORMAL)  # ロードボタンを有効にする
+            self.shuffle_button.config(state=tk.NORMAL)  # シャッフルボタンを有効にする
             self.clear_button.config(state=tk.NORMAL)  # クリアボタンを有効にする
 
     def on_clear_button_click(self):
@@ -1643,6 +1684,68 @@ class PromptConstructorMain:
             self.text_box_top.delete(1.0, tk.END)
 
 
+    # Shift込みで監視している
+    def on_mousewheel_leftpane(self, event):
+        if not event.delta < 0:
+            self.fontsize_treeview_current -= 1
+            self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            style = ttk.Style()
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            self.tree1.configure(style="Treeview")
+            self.tree2.configure(style="Treeview")
+            self.tree3.configure(style="Treeview")
+
+        elif not event.delta > 0:
+            self.fontsize_treeview_current += 1
+            self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            style = ttk.Style()
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            self.tree1.configure(style="Treeview")
+            self.tree2.configure(style="Treeview")
+            self.tree3.configure(style="Treeview")
+
+    # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
+    def on_mouseclick_leftpane(self, event):
+        if self.is_shift_pressed:  # Shiftキーが押されている場合
+            # フォントサイズをini設定に戻す
+            self.fontsize_treeview_current = fontsize_treeview
+            self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            style = ttk.Style()
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            self.tree1.configure(style="Treeview")
+            self.tree2.configure(style="Treeview")
+            self.tree3.configure(style="Treeview")
+
+    # Shift込みで監視している
+    def on_mousewheel_rightpane(self, event):
+        if not event.delta < 0:
+            self.fontsize_textbox_current -= 1
+            self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+
+        elif not event.delta > 0:
+            self.fontsize_textbox_current += 1
+            self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+
+    # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
+    def on_mouseclick_rightpane(self, event):
+        if self.is_shift_pressed:  # Shiftキーが押されている場合
+            # フォントサイズをini設定に戻す
+            self.fontsize_textbox_current = fontsize_textbox
+            self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
+            self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+
+    def clamp(self, value, vmin, vmax):
+        return int(max(min(value, vmax), vmin))
+
+
     def load_latest_prompt_file(self):
         prompt_folder = 'prompt'
         if not os.path.exists(prompt_folder):  # フォルダの存在確認
@@ -1685,12 +1788,14 @@ class PromptConstructorMain:
             self.redo_history.append(self.undo_history.pop())
             self.text_box_bottom.delete("1.0", tk.END)
             self.text_box_bottom.insert(tk.END, self.undo_history[-1])
+            self.text_box_bottom.event_generate("<<UpdateText>>")
 
     def redo(self, event=None):
         if self.redo_history:
             self.undo_history.append(self.redo_history.pop())
             self.text_box_bottom.delete("1.0", tk.END)
             self.text_box_bottom.insert(tk.END, self.undo_history[-1])
+            self.text_box_bottom.event_generate("<<UpdateText>>")
 
     def toggle_autosave_json(self):
         global autosave_json_enabled
