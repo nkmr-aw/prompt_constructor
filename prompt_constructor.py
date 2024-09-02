@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.8"
+version = "1.0.9"
 
 # 言語設定の読み込み
 config = configparser.ConfigParser()
@@ -22,6 +22,7 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
         'window_width': '1000',  # 初期ウィンドウ幅
         'window_height': '600',   # 初期ウィンドウ高さ
+        'itemarea_displines': '5',  # アイテム欄の表示行数(高さ)
         'messages': 'enable',  # メッセージの表示(enable)と抑止(disable)
         'autosave_json': 'disable',  # JSON辞書ファイルの自動保存設定
         'backup_json': 'enable',  # アプリ起動時にJSON辞書ファイルを自動バックアップする設定
@@ -29,9 +30,11 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'fontsize_treeview': '12',  # ツリー表示のフォントサイズ
         'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
+        'multiple_boot': 'disable',
         }
     with open(settings_path, 'w') as configfile:
         config.write(configfile)
+
 else:  # iniファイルが既にある場合は読み込むが、設定値があるかチェックし、ない場合は追加する
     config.read(settings_path)
 
@@ -45,6 +48,7 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
         'increment_unit': '0.05',
         'window_width': '1000',
         'window_height': '600',
+        'itemarea_displines': '5',
         'messages': 'enable',
         'autosave_json': 'disable',
         'backup_json': 'enable',
@@ -52,6 +56,7 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
         'fontsize_treeview': '12',
         'fontsize_textbox': '12',
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',
+        'multiple_boot': 'disable',
     }
 
     for key, value in default_settings.items():
@@ -75,18 +80,25 @@ if increment_unit not in [0.05, 0.1]:
     messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
     sys.exit(1)
 
-# textfontのチェックはstartメソッドで実施(理由もそちらに記載)
-textfont = config['Settings']['textfont']
-
 fontsize_textbox = int((config['Settings'].get('fontsize_textbox', '12')))
-if not 8 <= fontsize_textbox <= 96:
+if not 8 <= fontsize_textbox <= 32:
     messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox' \nIt must be between 8 and 32.")
     sys.exit(1)
 
 fontsize_treeview = int((config['Settings'].get('fontsize_treeview', '12')))
-if not 8 <= fontsize_textbox <= 96:
+if not 8 <= fontsize_treeview <= 32:
     messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview' \nIt must be between 8 and 32.")
     sys.exit(1)
+
+# アイテム欄の表示行数(高さ)
+itemarea_displines = int(config['Settings'].get('itemarea_displines', '5'))
+if not 1 <= itemarea_displines <= 20:
+    messagebox.showerror("Configuration Error", "Invalid value set for 'itemarea_displines'. \nIt must be between 1 and 20.")
+    sys.exit(1)
+
+
+# textfontのチェックはstartメソッドで実施(理由もそちらに記載)
+textfont = config['Settings']['textfont']
 
 # ウィンドウサイズの取得
 window_width = int(config['Settings'].get('window_width', '800'))
@@ -97,6 +109,10 @@ messages_enabled = config['Settings'].get('messages', 'enable') == 'enable'
 
 # 自動保存設定
 autosave_json_enabled = config['Settings'].get('autosave_json', 'enable') == 'enable'
+
+# 多重起動可否設定
+multiple_boot = config['Settings'].get('multiple_boot', 'enable')
+
 
 # メッセージとラベル
 messages = {
@@ -124,7 +140,10 @@ messages = {
         'tab_chunks': '  チャンク  ',
         'tab_words':  '    単語    ',
         'tab_favorites':  ' お気に入り ',
-        
+
+        'title_error': 'エラー',
+        'message_multipleboot_error': 'アプリケーションは既に実行されています。',
+
         'title_load': 'ロード',
         'message_load': 'ファイルを読み込みました。',
         'title_save': 'セーブ',
@@ -201,6 +220,10 @@ messages = {
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
         'tab_favorites':  '  Favorites  ',
+
+        'title_error': 'Error',
+        'message_multipleboot_error': 'The application is already running.',
+
         'title_load': 'Load',
         'message_load': 'File loaded successfully.',
         'title_save': 'Save',
@@ -272,22 +295,35 @@ initial_data_favorites = {
     "Fav:Words": []
     }
 
+# アプリケーションの開始時にロックファイルを作成
+lock_file_path = 'app.lock'
+
 
 class PromptConstructorMain:
     def __init__(self):
+
+        if multiple_boot == 'disable':
+            if os.path.exists(lock_file_path):
+                messagebox.showerror(messages[lang]['title_error'], messages[lang]['message_multipleboot_error'])
+                sys.exit(1)
+            else:
+                open(lock_file_path, 'w').close()  # ロックファイルを作成
+
+
         root = tk.Tk()
         self.root = root
         self.root.title("Prompt Constructor v" + version)
         self.root.geometry(f"{window_width}x{window_height}")
 
-        # プロンプト欄のカーソル位置を記憶する
-        def on_text_box_focus_out(self, event):
-            self.cursor_position = self.text_box_bottom.index(tk.INSERT)
-        # プロンプト欄のカーソル位置を記憶しておいた位置に戻す(再現する)
-        def on_text_box_focus_in(self, event):
-            if self.cursor_position:
-                self.text_box_bottom.mark_set(tk.INSERT, self.cursor_position)
-                self.text_box_bottom.see(tk.INSERT)
+
+        # # プロンプト欄のカーソル位置を記憶する
+        # def on_text_box_focus_out(self, event):
+        #     self.cursor_position = self.text_box_bottom.index(tk.INSERT)
+        # # プロンプト欄のカーソル位置を記憶しておいた位置に戻す(再現する)
+        # def on_text_box_focus_in(self, event):
+        #     if self.cursor_position:
+        #         self.text_box_bottom.mark_set(tk.INSERT, self.cursor_position)
+        #         self.text_box_bottom.see(tk.INSERT)
 
         # アプリ起動時に実行
         self.ensure_prompt_files_exist()
@@ -426,8 +462,8 @@ class PromptConstructorMain:
         self.copy2_button = tk.Button(self.button_vertical_frame2, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy2_button_click)
         self.copy2_button.pack(side=tk.TOP, pady=(5, 0))
         
-        # 上部テキストボックス
-        self.text_box_top = tk.Text(self.right_frame_top, height=5)
+        # 上部テキストボックス(アイテム欄)
+        self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines)
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_top.config(font=(textfont, fontsize_textbox))
 
@@ -532,7 +568,7 @@ class PromptConstructorMain:
         # キーバインドの設定
         self.root.bind("<Control-z>", self.undo)
         self.root.bind("<Control-y>", self.redo)
-        self.root.bind("<Escape>", self.on_exit)  # ESCボタンにon_exitメソッドをバインド
+        self.root.bind("<Escape>", self.on_exit)
 
         # 過去に自動保存されたtmpファイルを読み込む(text_box_bottomが配置された後でないと動作しないので注意)
         self.load_latest_prompt_file()
@@ -1621,7 +1657,7 @@ class PromptConstructorMain:
             try:
                 with open(latest_file, 'r', encoding='utf-8') as file:
                     content = file.read()
-                    if content:  # 中身が空でないことを確認
+                    if content.strip():  # 中身が空でないことを確認
                         self.text_box_bottom.delete(1.0, tk.END)
                         self.text_box_bottom.insert(tk.END, content)
                     self.undo_history.clear()
@@ -1680,6 +1716,10 @@ class PromptConstructorMain:
         # 末尾の改行を一つだけに置換
         content = content.rstrip("\n") + "\n" if content.endswith("\n") else content
 
+        # ここで内容が空の場合は完全に空にする
+        if not content.strip():  # strip()で空白と改行を削除して判定
+            self.text_box_bottom.delete(1.0, tk.END)
+
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)  # ファイルに内容を書き込む
         
@@ -1692,6 +1732,7 @@ class PromptConstructorMain:
             if result:
                 # 空でもtmpファイル作る
                 self.save_prompt_and_close()
+                os.remove(lock_file_path)  # ロックファイルを削除
                 self.root.destroy()
             else:
                 return
@@ -1701,6 +1742,7 @@ class PromptConstructorMain:
 
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
+            os.remove(lock_file_path)  # ロックファイルを削除
             self.root.destroy()
 
 
