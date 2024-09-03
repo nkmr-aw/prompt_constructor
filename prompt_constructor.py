@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.10"
+version = "1.0.11"
 
 
 # 言語設定の読み込み
@@ -135,6 +135,8 @@ messages = {
         'button_shuffle': 'シャッフル',
         'check_lock': 'ロック',
         'button_clear': 'クリア',
+        'button_copy_text': 'テキストをクリップボードにコピー',
+        'button_clone_item': 'このアイテムを複製する',
         'button_add_fav': 'お気に入りに追加',
         'button_close': '閉じる',
         'label_search': '検索',
@@ -150,7 +152,11 @@ messages = {
         'message_load': 'ファイルを読み込みました。',
         'title_save': 'セーブ',
         'message_save': 'ファイルを保存しました。',
+        'title_save_error': 'セーブエラー',
         'message_text_empty': 'テキストボックスが空です。',
+
+        'title_clone_info': 'アイテム複製',
+        'message_clone_complete': 'アイテムを複製しました。',
 
         'title_fav_info': 'お気に入り追加',
         'message_fav_complete': ' をお気に入りに追加しました。',  # 先頭にスペース入れる
@@ -186,7 +192,7 @@ messages = {
         'message_item_deleted': '選択したアイテムを削除します。削除していいですか？',
         'message_item_deleted_with_children': '配下のアイテムも一緒にすべて削除されます。削除していいですか？',
 
-        'title_prompt_info': '情報',
+        'title_prompt_error': '一覧エラー',
         'message_prompt_listitem_notfound': '一覧表示できるファイルがありません。',
         'title_close': '閉じる',
 
@@ -215,7 +221,9 @@ messages = {
         'button_shuffle': 'Shuffle',
         'check_lock': 'Lock',
         'button_clear': 'Clear',
-        'button_add_fav': 'Add to Favorites',
+        'button_copy_text': 'Copy text to clipboard',
+        'button_clone_item': 'Clone this item',
+        'button_add_fav': 'Add to favorites',
         'button_close': 'Close',
         'label_search': 'Search',
         
@@ -230,7 +238,11 @@ messages = {
         'message_load': 'File loaded successfully.',
         'title_save': 'Save',
         'message_save': 'File saved successfully.',
+        'title_save_error': 'Save Error',
         'message_text_empty': 'Textbox is empty.',
+
+        'title_clone_info': 'Cloning item Complete',
+        'message_clone_complete': 'Item cloned successfully.',
 
         'title_fav_info': 'Fav Complete',
         'message_fav_complete': ' is added to Favorites.',  # 先頭にスペース入れる
@@ -266,7 +278,7 @@ messages = {
         'message_item_deleted': 'Are you sure you want to delete the selected item?',
         'message_item_deleted_with_children': 'All items under the selected item will also be deleted. Are you sure?',
 
-        'title_prompt_info': 'Info',
+        'title_prompt_error': 'Listing Error',
         'message_prompt_listitem_notfound': 'No files found to list.',
         'title_close': 'Close',
 
@@ -470,7 +482,7 @@ class PromptConstructorMain:
         # 上部テキストボックス(アイテム欄)
         self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines)
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.text_box_top.config(font=(textfont, fontsize_textbox))
+        self.text_box_top.config(font=(textfont, fontsize_textbox), takefocus=0)
 
 
         # 右ペインの下部フレーム (テキストボックスと「クリア」ボタン等)
@@ -514,14 +526,15 @@ class PromptConstructorMain:
         self.text_box_bottom = tk.Text(self.right_frame_bottom, height=10)
         self.text_box_bottom.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_bottom.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
-        self.text_box_bottom.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
+        self.text_box_bottom.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
+        self.text_box_bottom.focus()
         
         # 検索欄
         self.text_box_search = EntryWithPlaceholder(self.right_frame_bottom, placeholder=messages[lang]['label_search'], color='gray')
         self.text_box_search.pack()
         self.text_box_search.pack(fill=tk.BOTH, padx=5, pady=5)
         self.text_box_search.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
-        self.text_box_search.config(font=(textfont, fontsize_textbox))  # システムフォントを使用
+        self.text_box_search.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
 
         # イベントバインド
         self.text_box_search.bind("<<Modified>>", self.on_entry_change)
@@ -809,12 +822,17 @@ class PromptConstructorMain:
 
                 # 前回選択したアイテムと同じなら下部テキストボックスに追加
                 if self.last_selected_child == selected_item[0]:
-                    item_text = item_text.rstrip(',') + ", "
+                    # コメント行("#"で始まる行)を除外
+                    text_lines = item_text.split("\n")
+                    filtered_lines = [line for line in text_lines if not line.startswith("#")]
+                    filtered_text = "\n".join(filtered_lines)
+                    # 改行を追加
+                    filtered_text = filtered_text.rstrip(',') + ", "
                     cursor_position = self.text_box_bottom.index(tk.INSERT)
                     if cursor_position:
-                        self.text_box_bottom.insert(cursor_position, item_text)
+                        self.text_box_bottom.insert(cursor_position, filtered_text)
                     else:
-                        self.text_box_bottom.insert(tk.END, item_text)
+                        self.text_box_bottom.insert(tk.END, filtered_text)
                     self.save_to_history2()
                 else:
                     self.last_selected_child = selected_item[0]
@@ -920,6 +938,7 @@ class PromptConstructorMain:
         if autosave_json_enabled:
             self.save_dicts_to_json()
 
+    # 右クリックメニュー
     def right_click_menu(self, event):
         menu = Menu(self.root, tearoff=0)
         current_tab = self.tab_control.index(self.tab_control.select())
@@ -938,9 +957,12 @@ class PromptConstructorMain:
             if selected_item:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['button_copy_text'], command=self.copy_item_text)
+                    menu.add_command(label=messages[lang]['button_clone_item'], command=lambda: self.clone_child_item(tree, selected_item))
                     menu.add_command(label=messages[lang]['button_add_fav'], command=self.add_to_favorites)
                     menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
                 else:  # 親アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['button_copy_text'], command=self.copy_item_text)
                     menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
             self.delete_button.config(state=tk.NORMAL)
             self.update_button.config(state=tk.NORMAL)
@@ -950,6 +972,7 @@ class PromptConstructorMain:
             if selected_item:
                 parent_item = tree.parent(selected_item[0])
                 if parent_item:  # 子アイテムが選択されている場合
+                    menu.add_command(label=messages[lang]['button_copy_text'], command=self.copy_item_text)
                     menu.add_command(label=messages[lang]['button_delete'], command=self.on_delete_button_click)
                     self.delete_button.config(state=tk.NORMAL)
                     self.update_button.config(state=tk.NORMAL)
@@ -958,6 +981,47 @@ class PromptConstructorMain:
                     self.update_button.config(state=tk.DISABLED)
 
         menu.post(event.x_root, event.y_root)
+
+    def copy_item_text(self):
+        current_tab = self.tab_control.index(self.tab_control.select())
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            tree = None
+
+        if tree:
+            selected_item = tree.selection()
+            if selected_item:
+                item_text = tree.item(selected_item[0], "text")
+                self.root.clipboard_clear()
+                self.root.clipboard_append(item_text)
+                self.root.update()
+                if messages_enabled:
+                    messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_item_copied'])
+            else:
+                messagebox.showerror(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
+
+    def clone_child_item(self, tree, selected_item):
+        # 選択されたアイテムのテキストを取得
+        item_text = tree.item(selected_item, "text")
+
+        # 選択されたアイテムの親を取得
+        parent_item = tree.parent(selected_item)
+
+        # 選択されたアイテムのインデックスを取得
+        item_index = tree.index(selected_item)
+
+        # 親アイテムの下に新しい子アイテムを挿入
+        tree.insert(parent_item, item_index + 1, text=item_text)
+
+        if autosave_json_enabled:
+            self.save_dicts_to_json()
+        if messages_enabled:
+            messagebox.showinfo(messages[lang]['title_clone_info'], messages[lang]['message_clone_complete'])
 
     def add_to_favorites(self):
         current_tab = self.tab_control.index(self.tab_control.select())
@@ -985,9 +1049,12 @@ class PromptConstructorMain:
 
                 # 子アイテムとして追加
                 self.tree3.insert(favorites_parent, "end", text=item_text)
-                messagebox.showinfo(messages[lang]['title_fav_info'], item_text + messages[lang]['message_fav_complete'])
+                if autosave_json_enabled:
+                    self.save_dicts_to_json()
+                if messages_enabled:
+                    messagebox.showinfo(messages[lang]['title_fav_info'], item_text + messages[lang]['message_fav_complete'])
             else:
-                messagebox.showinfo(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
+                messagebox.showerror(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
 
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
     # 表示しているタブによる分岐処理は未記載
@@ -1150,8 +1217,7 @@ class PromptConstructorMain:
                         if autosave_json_enabled:
                             self.save_dicts_to_json()
         else:
-            if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_delete_error'], messages[lang]['message_select_item_to_delete'])
+            messagebox.showerror(messages[lang]['title_delete_error'], messages[lang]['message_select_item_to_delete'])
             return
 
 
@@ -1168,22 +1234,19 @@ class PromptConstructorMain:
         
         selected_item = tree.selection()
         if not selected_item:
-            if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_select_item'])
+            messagebox.showerror(messages[lang]['title_update_error'], messages[lang]['message_select_item'])
             return
 
         new_text = self.text_box_top.get(1.0, tk.END).strip()
         if not new_text:
-            if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_text_empty'])
+            messagebox.showerror(messages[lang]['title_update_error'], messages[lang]['message_text_empty'])
             return
 
         parent_item = tree.parent(selected_item[0])
         if not parent_item:
             for item in tree.get_children():
                 if item != selected_item[0] and tree.item(item, "text") == new_text:
-                    if messages_enabled:
-                        messagebox.showinfo(messages[lang]['title_update_error'], messages[lang]['message_item_exists'])
+                    messagebox.showerror(messages[lang]['title_update_error'], messages[lang]['message_item_exists'])
                     return
 
         tree.item(selected_item[0], text=new_text)
@@ -1200,7 +1263,8 @@ class PromptConstructorMain:
             self.root.clipboard_clear()
             self.root.clipboard_append(item_text)
             self.root.update()
-            messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_item_copied'])
+            if messages_enabled:
+                messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_item_copied'])
 
 
     def on_list_button_click(self):
@@ -1208,7 +1272,7 @@ class PromptConstructorMain:
         files = glob(os.path.join(prompt_folder, "prompt_saved_*.txt"))
         
         if not files:
-            messagebox.showinfo(messages[lang]['title_prompt_info'], messages[lang]['message_prompt_listitem_notfound'])
+            messagebox.showerror(messages[lang]['title_prompt_error'], messages[lang]['message_prompt_listitem_notfound'])
             return
 
         # 最新の5つのファイルを取得
@@ -1303,8 +1367,7 @@ class PromptConstructorMain:
 
     def on_save_button_click(self):
         if not self.text_box_bottom.get(1.0, tk.END).strip():
-            if messages_enabled:
-                messagebox.showinfo(messages[lang]['title_save'], messages[lang]['message_text_empty'])
+            messagebox.showerror(messages[lang]['title_save_error'], messages[lang]['message_text_empty'])
             return
         
         from tkinter import filedialog
@@ -1349,7 +1412,7 @@ class PromptConstructorMain:
         # 括弧が適切に閉じられていない場合は処理を終了
         if not words:
             # split_wordsのほうでメッセージ出すのでここはコメントアウト
-            # messagebox.showinfo(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
+            # messagebox.showerror(messages[lang]['title_format_error'], messages[lang]['messages_unbalanced_brackets'])
             return
 
         # 単語をシャッフル
