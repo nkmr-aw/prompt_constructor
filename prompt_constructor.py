@@ -12,7 +12,7 @@ import random
 from settings_window import settings
 
 
-version = "1.0.15"
+version = "1.0.16"
 
 
 # 言語設定の読み込み
@@ -1923,8 +1923,16 @@ class PromptConstructorMain:
 
     def open_settings(self):
         # 設定ウィンドウを開く
-        self.settings_window = settings(self.root)
+        if self.settings_window is None or not self.settings_window.winfo_exists():
+            self.settings_window = settings(self)
         # 新しく開いたウインドウを排他的に操作できるようにする処理はsettingsのほうに記載
+
+
+    def update_autosave_settings(self):
+        """設定ファイルから自動保存設定を読み込み、変数とチェックボックスを更新する"""
+        global autosave_json_enabled
+        autosave_json_enabled = config['Settings'].get('autosave_json', 'enable') == 'enable'
+        self.autosave_json_var.set(autosave_json_enabled)
 
 
     def on_exit(self, event=None):
