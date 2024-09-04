@@ -9,9 +9,10 @@ import tkinter.font as tkFont
 from glob import glob
 import re
 import random
+from settings_window import settings
 
 
-version = "1.0.14"
+version = "1.0.15"
 
 
 # 言語設定の読み込み
@@ -93,9 +94,11 @@ if not fontsize_min <= fontsize_textbox <= fontsize_max:
     sys.exit(1)
 
 # アイテム欄の表示行数(高さ)
+itemarea_displines_min = 1
+itemarea_displines_max = 20
 itemarea_displines = int(config['Settings'].get('itemarea_displines', '5'))
-if not 1 <= itemarea_displines <= 20:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'itemarea_displines'. \nIt must be between 1 and 20.")
+if not itemarea_displines_min <= itemarea_displines <= itemarea_displines_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
     sys.exit(1)
 
 
@@ -124,6 +127,7 @@ messages = {
         'button_expand': '+',
         'button_collapse': '-',
         'button_delete': '削除',
+        'button_settings': '設定',
         'check_autosave_json': '辞書オートセーブ',
         'button_save_json': '辞書セーブ',
         
@@ -140,6 +144,7 @@ messages = {
         'button_add_fav': 'お気に入りに追加',
         'button_close': '閉じる',
         'label_search': '検索',
+        'button_apply': '適用',
 
         'tab_chunks': '  チャンク  ',
         'tab_words':  '    単語    ',
@@ -210,6 +215,7 @@ messages = {
         'button_expand': '+',
         'button_collapse': '-',
         'button_delete': 'Delete',
+        'button_settings': 'Settings',
         'check_autosave_json': 'Auto Save dicts.',
         'button_save_json': 'Save dicts.',
         
@@ -226,6 +232,7 @@ messages = {
         'button_add_fav': 'Add to favorites',
         'button_close': 'Close',
         'label_search': 'Search',
+        'button_apply': '適用',
         
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
@@ -571,15 +578,19 @@ class PromptConstructorMain:
         self.json_options_frame = tk.Frame(self.left_frame)
         self.json_options_frame.pack(side=tk.BOTTOM, pady=5)
 
-        # 「辞書オートセーブ」設定のチェックボックス
-        self.autosave_json_var = tk.BooleanVar(value=autosave_json_enabled)
-
-        self.autosave_json_checkbox = tk.Checkbutton(self.json_options_frame, text=messages[lang]['check_autosave_json'], variable=self.autosave_json_var, command=self.toggle_autosave_json)
-        self.autosave_json_checkbox.pack(side=tk.LEFT)
+        # 設定ボタン
+        self.settings_button = tk.Button(self.json_options_frame, text=messages[lang]['button_settings'], width=8, command=self.open_settings)  # コマンドは適宜設定
+        self.settings_button.pack(side=tk.LEFT, padx=(0, 25))
+        self.settings_window = None  # 設定ウインドウインスタンス
 
         # 「辞書セーブ」ボタン
         self.save_json_button = tk.Button(self.json_options_frame, text=messages[lang]['button_save_json'], width=10, command=self.save_dicts_to_json)
-        self.save_json_button.pack(side=tk.RIGHT, padx=15)
+        self.save_json_button.pack(side=tk.RIGHT, padx=(5, 0))
+
+        # 「辞書オートセーブ」設定のチェックボックス
+        self.autosave_json_var = tk.BooleanVar(value=autosave_json_enabled)
+        self.autosave_json_checkbox = tk.Checkbutton(self.json_options_frame, text=messages[lang]['check_autosave_json'], variable=self.autosave_json_var, command=self.toggle_autosave_json)
+        self.autosave_json_checkbox.pack(side=tk.RIGHT,  padx=(20, 0))
 
         # JSONファイルのロード
         self.load_dicts_from_json()
@@ -1908,7 +1919,14 @@ class PromptConstructorMain:
         
         # 少し待ってからウィンドウを閉じる
         self.root.after(100, self.root.destroy)
-    
+
+
+    def open_settings(self):
+        # 設定ウィンドウを開く
+        self.settings_window = settings(self.root)
+        # 新しく開いたウインドウを排他的に操作できるようにする処理はsettingsのほうに記載
+
+
     def on_exit(self, event=None):
         if not autosave_json_enabled:
             result = messagebox.askokcancel(messages[lang]['title_exit_confirm'], messages[lang]['message_autosave_disabled_confirm'])
