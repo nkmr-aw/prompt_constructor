@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.11"
+version = "1.0.12"
 
 
 # 言語設定の読み込み
@@ -825,14 +825,21 @@ class PromptConstructorMain:
                     # コメント行("#"で始まる行)を除外
                     text_lines = item_text.split("\n")
                     filtered_lines = [line for line in text_lines if not line.startswith("#")]
-                    filtered_text = "\n".join(filtered_lines)
-                    # 改行を追加
-                    filtered_text = filtered_text.rstrip(',') + ", "
+
+                    # 行の途中から始まるコメントを改行部分まで除外
+                    filtered_lines2 = ""
+                    for line in filtered_lines:
+                        if "#" in line:
+                            _index = line.find('#')
+                            if _index != -1:
+                                line = line[:_index].strip()
+                        filtered_lines2 += line + '\n'
+
                     cursor_position = self.text_box_bottom.index(tk.INSERT)
                     if cursor_position:
-                        self.text_box_bottom.insert(cursor_position, filtered_text)
+                        self.text_box_bottom.insert(cursor_position, filtered_lines2)
                     else:
-                        self.text_box_bottom.insert(tk.END, filtered_text)
+                        self.text_box_bottom.insert(tk.END, filtered_lines2)
                     self.save_to_history2()
                 else:
                     self.last_selected_child = selected_item[0]
