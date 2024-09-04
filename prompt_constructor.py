@@ -12,7 +12,7 @@ import random
 from settings_window import settings
 
 
-version = "1.0.16"
+version = "1.0.17"
 
 
 # 言語設定の読み込み
@@ -83,31 +83,51 @@ if increment_unit not in [0.05, 0.1]:
 
 fontsize_min = 8
 fontsize_max = 32
-fontsize_treeview = int((config['Settings'].get('fontsize_treeview', '12')))
-if not fontsize_min <= fontsize_treeview <= fontsize_max:
+fontsize_treeview = (config['Settings'].get('fontsize_treeview', '12'))
+if fontsize_treeview == '':
+    messagebox.showerror("Configuration Error", "fontsize_treeview cannot be empty.") 
+    sys.exit(1)
+if not fontsize_min <= int(fontsize_treeview) <= fontsize_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
     sys.exit(1)
 
-fontsize_textbox = int((config['Settings'].get('fontsize_textbox', '12')))
-if not fontsize_min <= fontsize_textbox <= fontsize_max:
+fontsize_textbox = (config['Settings'].get('fontsize_textbox', '12'))
+if fontsize_textbox == '':
+    messagebox.showerror("Configuration Error", "fontsize_textbox cannot be empty.")
+    sys.exit(1)
+if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
     sys.exit(1)
 
 # アイテム欄の表示行数(高さ)
 itemarea_displines_min = 1
 itemarea_displines_max = 20
-itemarea_displines = int(config['Settings'].get('itemarea_displines', '5'))
-if not itemarea_displines_min <= itemarea_displines <= itemarea_displines_max:
+itemarea_displines = config['Settings'].get('itemarea_displines', '5')
+if itemarea_displines == '':
+    messagebox.showerror("Configuration Error", "itemarea_displines cannot be empty.")
+    sys.exit(1)
+if not itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
     sys.exit(1)
 
 
 # textfontのチェックはstartメソッドで実施(理由もそちらに記載)
 textfont = config['Settings']['textfont']
+if textfont == '':
+    messagebox.showerror("Configuration Error", "textfont cannot be empty.") 
+    sys.exit(1)
+
 
 # ウィンドウサイズの取得
-window_width = int(config['Settings'].get('window_width', '800'))
-window_height = int(config['Settings'].get('window_height', '600'))
+window_width = config['Settings'].get('window_width', '800')
+window_height = config['Settings'].get('window_height', '600')
+if window_width == '':
+    messagebox.showerror("Configuration Error", "window_width cannot be empty.") 
+    sys.exit(1)
+if window_height == '':
+    messagebox.showerror("Configuration Error", "window_height cannot be empty.")
+    sys.exit(1)
+
 
 # メッセージ表示設定
 messages_enabled = config['Settings'].get('messages', 'enable') == 'enable'
