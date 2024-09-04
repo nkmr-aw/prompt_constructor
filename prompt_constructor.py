@@ -11,7 +11,7 @@ import re
 import random
 
 
-version = "1.0.13"
+version = "1.0.14"
 
 
 # 言語設定の読み込み
@@ -819,6 +819,7 @@ class PromptConstructorMain:
                 # 子アイテムが選択された場合
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
+                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
 
                 # 前回選択したアイテムと同じなら下部テキストボックスに追加
                 if self.last_selected_child == selected_item[0]:
@@ -845,6 +846,7 @@ class PromptConstructorMain:
                         self.text_box_bottom.insert(cursor_position, filtered_lines2)
                     else:
                         self.text_box_bottom.insert(tk.END, filtered_lines2)
+                    self.text_box_bottom.focus()  # アイテム追加後、プロンプト欄にフォーカス
                     self.save_to_history2()
                 else:
                     self.last_selected_child = selected_item[0]
@@ -852,6 +854,7 @@ class PromptConstructorMain:
             else:
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
+                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
                 self.last_selected_parent = selected_item[0]
                 self.last_selected_child = None
         
