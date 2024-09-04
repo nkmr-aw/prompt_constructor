@@ -232,7 +232,7 @@ messages = {
         'button_add_fav': 'Add to favorites',
         'button_close': 'Close',
         'label_search': 'Search',
-        'button_apply': '適用',
+        'button_apply': 'Apply',
         
         'tab_chunks': '  Chunks  ',
         'tab_words':  '   Words   ',
