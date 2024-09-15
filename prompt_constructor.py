@@ -9,10 +9,10 @@ import tkinter.font as tkFont
 from glob import glob
 import re
 import random
-from settings_window import settings
+from settings_window import settings, cleanup_ini_file
 
 
-version = "1.0.17"
+version = "1.0.18"
 
 
 # 言語設定の読み込み
@@ -33,11 +33,14 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
         'multiple_boot': 'disable',
-        }
+    }
     with open(settings_path, 'w') as configfile:
-        config.write(configfile)
+        config.write(configfile, space_around_delimiters=False)
 
 else:  # iniファイルが既にある場合は読み込むが、設定値があるかチェックし、ない場合は追加する
+    # ゴミ除去(保険処理)
+    cleanup_ini_file(settings_path)
+    # inファイルを読む
     config.read(settings_path)
 
     # 'Settings'セクションが存在しない場合は新規作成
@@ -67,7 +70,7 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
 
     # 設定をINIファイルに書き込む
     with open(settings_path, 'w') as configfile:
-        config.write(configfile)
+        config.write(configfile, space_around_delimiters=False)
 
 
 # 設定値のバリデーション
@@ -76,45 +79,10 @@ if lang not in ['en', 'ja']:
     messagebox.showerror("Configuration Error", "Invalid value set for 'lang'. \nIt must be 'en' or 'ja'.")
     sys.exit(1)
 
+
 increment_unit = float(config['Settings'].get('increment_unit', '0.1'))
 if increment_unit not in [0.05, 0.1]:
     messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
-    sys.exit(1)
-
-fontsize_min = 8
-fontsize_max = 32
-fontsize_treeview = (config['Settings'].get('fontsize_treeview', '12'))
-if fontsize_treeview == '':
-    messagebox.showerror("Configuration Error", "fontsize_treeview cannot be empty.") 
-    sys.exit(1)
-if not fontsize_min <= int(fontsize_treeview) <= fontsize_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
-    sys.exit(1)
-
-fontsize_textbox = (config['Settings'].get('fontsize_textbox', '12'))
-if fontsize_textbox == '':
-    messagebox.showerror("Configuration Error", "fontsize_textbox cannot be empty.")
-    sys.exit(1)
-if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
-    sys.exit(1)
-
-# アイテム欄の表示行数(高さ)
-itemarea_displines_min = 1
-itemarea_displines_max = 20
-itemarea_displines = config['Settings'].get('itemarea_displines', '5')
-if itemarea_displines == '':
-    messagebox.showerror("Configuration Error", "itemarea_displines cannot be empty.")
-    sys.exit(1)
-if not itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
-    sys.exit(1)
-
-
-# textfontのチェックはstartメソッドで実施(理由もそちらに記載)
-textfont = config['Settings']['textfont']
-if textfont == '':
-    messagebox.showerror("Configuration Error", "textfont cannot be empty.") 
     sys.exit(1)
 
 
@@ -122,11 +90,74 @@ if textfont == '':
 window_width = config['Settings'].get('window_width', '800')
 window_height = config['Settings'].get('window_height', '600')
 if window_width == '':
-    messagebox.showerror("Configuration Error", "window_width cannot be empty.") 
+    messagebox.showerror("Configuration Error", "'window_width' cannot be empty.")
+    sys.exit(1)
+if not window_width.isdigit():
+    messagebox.showerror("Configuration Error", "Invalid value set for 'window_width'. \nIt must be an integer.")
     sys.exit(1)
 if window_height == '':
-    messagebox.showerror("Configuration Error", "window_height cannot be empty.")
+    messagebox.showerror("Configuration Error", "'window_height' cannot be empty.")
     sys.exit(1)
+if not window_height.isdigit():
+    messagebox.showerror("Configuration Error", "Invalid value set for 'window_height'. \nIt must be an integer.")
+    sys.exit(1)
+
+
+fontsize_min = 8
+fontsize_max = 32
+fontsize_treeview = (config['Settings'].get('fontsize_treeview', '12'))
+if fontsize_treeview == '':
+    messagebox.showerror("Configuration Error", "'fontsize_treeview' cannot be empty.")
+    sys.exit(1)
+if not fontsize_treeview.isdigit():
+    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview'. \nIt must be an integer.")
+    sys.exit(1)
+if not fontsize_min <= int(fontsize_treeview) <= fontsize_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
+    sys.exit(1)
+
+
+fontsize_textbox = (config['Settings'].get('fontsize_textbox', '12'))
+if fontsize_textbox == '':
+    messagebox.showerror("Configuration Error", "'fontsize_textbox' cannot be empty.")
+    sys.exit(1)
+if not fontsize_textbox.isdigit():
+    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox'. \nIt must be an integer.")
+    sys.exit(1)
+if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
+    sys.exit(1)
+
+
+# アイテム欄の表示行数(高さ)
+itemarea_displines_min = 1
+itemarea_displines_max = 20
+itemarea_displines = config['Settings'].get('itemarea_displines', '5')
+if itemarea_displines == '':
+    messagebox.showerror("Configuration Error", "'itemarea_displines' cannot be empty.")
+    sys.exit(1)
+if not itemarea_displines.isdigit():
+    messagebox.showerror("Configuration Error", "Invalid value set for 'itemarea_displines'. \nIt must be an integer.")
+    sys.exit(1)
+if not itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max:
+    messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
+    sys.exit(1)
+
+
+# textfontの下記以外のチェックはstartメソッドで実施(理由もそちらに記載)
+textfont = config['Settings']['textfont']
+if textfont == '':
+    messagebox.showerror("Configuration Error", "'textfont' cannot be empty.")
+    sys.exit(1)
+
+
+datetime_format = config['Settings'].get('datetime_format', '%%Y%%m%%d_%%H%%M%%S')
+# 許可するフォーマット文字列
+allowed_format_codes = "%Y%m%d%H%M%S_.-"
+for code in datetime_format:
+    if code not in allowed_format_codes:
+        messagebox.showerror("Configuration Error",f"Invalid character found in 'datetime_format'.")
+        sys.exit(1)
 
 
 # メッセージ表示設定
@@ -612,9 +643,6 @@ class PromptConstructorMain:
         self.autosave_json_checkbox = tk.Checkbutton(self.json_options_frame, text=messages[lang]['check_autosave_json'], variable=self.autosave_json_var, command=self.toggle_autosave_json)
         self.autosave_json_checkbox.pack(side=tk.RIGHT,  padx=(20, 0))
 
-        # JSONファイルのロード
-        self.load_dicts_from_json()
-
         # 前回選択したアイテムを記録する変数
         self.last_selected_parent = None
         self.last_selected_child = None
@@ -648,16 +676,26 @@ class PromptConstructorMain:
 
 
     def start(self):
-        self.ensure_prompt_files_exist()
-        self.load_dicts_from_json()
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
 
         # フォント設定(tkFontのインポートをrootウインドウ作成後に行う必要があるため、initではなくここで実施)
+        global textfont
         textfont = config['Settings']['textfont']
         try:
-            tkFont.Font(family=textfont)
+            # システムにインストールされているフォント名一覧を取得
+            available_fonts = tkFont.families()
+            # 設定ファイルで指定されたフォント名が、システムにインストールされているかを確認
+            if textfont == "TkDefaultFont" or textfont in available_fonts:
+                # インストールされている場合は、指定されたフォントをそのまま使用
+                pass
+            else:
+                # インストールされていない場合は、デフォルトフォントを使用
+                textfont = 'TkDefaultFont'
+                messagebox.showwarning("Font Warning", f"The specified font was not found. Using the default font.")
+
         except tk.TclError:
             textfont = 'TkDefaultFont'  # 利用できないフォントならTkinterのデフォルトフォントを使用
+            messagebox.showwarning("Font Error", "An error occurred while setting the font. Using the default font.")
 
         self.root.mainloop()
 
@@ -899,7 +937,7 @@ class PromptConstructorMain:
                 self.update_button.config(state=tk.NORMAL)
             else:  # 親アイテムが選択されている場合
                 self.delete_button.config(state=tk.DISABLED)
-                self.update_button.config(state=tk.DISABLED)
+                # self.update_button.config(state=tk.DISABLED)
 
 
     def expand_all(self):
@@ -1024,7 +1062,7 @@ class PromptConstructorMain:
                     self.update_button.config(state=tk.NORMAL)
                 else:  # 親アイテムが選択されている場合
                     self.delete_button.config(state=tk.DISABLED)
-                    self.update_button.config(state=tk.DISABLED)
+                    # self.update_button.config(state=tk.DISABLED)
 
         menu.post(event.x_root, event.y_root)
 
@@ -1785,7 +1823,7 @@ class PromptConstructorMain:
                 parent_item = tree.parent(selected_item[0])
                 if not parent_item:  # 親アイテムが選択されている場合
                     self.delete_button.config(state=tk.DISABLED)
-                    self.update_button.config(state=tk.DISABLED)
+                    # self.update_button.config(state=tk.DISABLED)
                 else:
                     self.delete_button.config(state=tk.NORMAL)
                     self.update_button.config(state=tk.NORMAL)
@@ -1864,7 +1902,7 @@ class PromptConstructorMain:
         files = glob(pattern)
 
         if files:
-            latest_file = max(files, key=os.path.getctime)
+            latest_file = max(files, key=os.path.getmtime)
             
             try:
                 with open(latest_file, 'r', encoding='utf-8') as file:
@@ -1911,7 +1949,7 @@ class PromptConstructorMain:
         autosave_json_enabled = self.autosave_json_var.get()
         config['Settings']['autosave_json'] = 'enable' if autosave_json_enabled else 'disable'
         with open(settings_path, 'w') as configfile:
-            config.write(configfile)
+            config.write(configfile, space_around_delimiters=False)
 
     def save_prompt_and_close(self):
         import datetime

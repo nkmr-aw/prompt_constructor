@@ -123,15 +123,23 @@ class settings(tk.Toplevel):
         disable_radio = tk.Radiobutton(backup_json_frame, text="disable", variable=backup_json_var, value="disable")
         disable_radio.pack(side=tk.LEFT)
 
+        # システムにインストールされているフォント名一覧を取得+TkDefaultFont
+        self.available_fonts = ["TkDefaultFont"]
+        self.available_fonts += tkFont.families()
 
         # 表示フォント設定
         textfont_frame = tk.LabelFrame(settings_frame, text="")
         textfont_frame.pack(pady=5)
         label = tk.Label(textfont_frame, text="textfont: ")
         label.pack(side=tk.LEFT)
-        self.textfont_entry = tk.Entry(textfont_frame)
-        self.textfont_entry.insert(0, config['Settings']['textfont'])
-        self.textfont_entry.pack(side=tk.LEFT)
+        self.textfont_var = tk.StringVar(value=config['Settings']['textfont'])
+        self.textfont_combobox = ttk.Combobox(
+            textfont_frame,
+            textvariable=self.textfont_var,
+            values=self.available_fonts,
+            state="readonly"  # 直接入力を禁止
+        )
+        self.textfont_combobox.pack(side=tk.LEFT)
 
 
         # ツリー表示のフォントサイズ設定
@@ -190,8 +198,7 @@ class settings(tk.Toplevel):
             self.window_height_entry.insert(0, "600")
             self.itemarea_displines_entry.delete(0, tk.END)
             self.itemarea_displines_entry.insert(0, "5")
-            self.textfont_entry.delete(0, tk.END)
-            self.textfont_entry.insert(0, "TkDefaultFont")
+            self.textfont_combobox.set("TkDefaultFont")
             self.fontsize_treeview_entry.delete(0, tk.END)
             self.fontsize_treeview_entry.insert(0, "12")
             self.fontsize_textbox_entry.delete(0, tk.END)
@@ -201,61 +208,104 @@ class settings(tk.Toplevel):
 
         # 適用ボタン
         def apply_settings():
-            config['Settings']['lang'] = self.lang_var.get()
-            config['Settings']['increment_unit'] = self.increment_unit_var.get()
-            config['Settings']['messages'] = messages_var.get()
-            config['Settings']['autosave_json'] = autosave_json_var.get()
-            config['Settings']['backup_json'] = backup_json_var.get()
-            config['Settings']['multiple_boot'] = multiple_boot_var.get()
-            config['Settings']['window_width'] = self.window_width_entry.get()
-            config['Settings']['window_height'] = self.window_height_entry.get()
-            config['Settings']['itemarea_displines'] = self.itemarea_displines_entry.get()
-            config['Settings']['textfont'] = self.textfont_entry.get()
-            config['Settings']['fontsize_treeview'] = self.fontsize_treeview_entry.get()
-            config['Settings']['fontsize_textbox'] = self.fontsize_textbox_entry.get()
-            # config['Settings']['datetime_format'] = self.datetime_format_entry.get()
-            config['Settings']['datetime_format'] = self.datetime_format_entry.get().replace('%', '%%')
 
             # 設定値のバリデーション
-
-            fontsize_min = 8
-            fontsize_max = 32
-            fontsize_treeview = config['Settings'].get('fontsize_treeview', '12')
-            fontsize_textbox = config['Settings'].get('fontsize_textbox', '12')
+            window_width = self.window_width_entry.get()
+            window_height = self.window_height_entry.get()
             itemarea_displines_min = 1
             itemarea_displines_max = 20
-            itemarea_displines = config['Settings'].get('itemarea_displines', '5')
+            itemarea_displines = self.itemarea_displines_entry.get()
+            textfont = self.textfont_combobox.get()
+            fontsize_min = 8
+            fontsize_max = 32
+            fontsize_treeview = self.fontsize_treeview_entry.get()
+            fontsize_textbox = self.fontsize_textbox_entry.get()
 
-            if self.window_width_entry.get() == '':
-                messagebox.showerror("Configuration Error", "window_width cannot be empty.") 
+            datetime_format = self.datetime_format_entry.get()
+            # 許可するフォーマット文字列
+            allowed_format_codes = "%Y%m%d%H%M%S_.-"
+            check_datetime_format = True
+            for code in datetime_format:
+                if code not in allowed_format_codes:
+                    check_datetime_format = False
+                    break
 
-            elif self.window_height_entry.get() == '':
-                messagebox.showerror("Configuration Error", "window_height cannot be empty.") 
+            if window_width == '':
+                messagebox.showerror("Configuration Error", "'window_width' cannot be empty.")
 
-            elif self.itemarea_displines_entry.get() == '':
-                messagebox.showerror("Configuration Error", "itemarea_displines cannot be empty.") 
+            elif not window_width.isdigit():
+                messagebox.showerror("Configuration Error", "Invalid value set for 'window_width'. \nIt must be an integer.")
+
+
+            elif window_height == '':
+                messagebox.showerror("Configuration Error", "'window_height' cannot be empty.")
+
+            elif not window_height.isdigit():
+                messagebox.showerror("Configuration Error", "Invalid value set for 'window_height'. \nIt must be an integer.")
+
+
+            elif itemarea_displines == '':
+                messagebox.showerror("Configuration Error", "'itemarea_displines' cannot be empty.")
+
+            elif not itemarea_displines.isdigit():
+                messagebox.showerror("Configuration Error", "Invalid value set for 'itemarea_displines'. \nIt must be an integer.")
 
             elif not (itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max):
                 messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
 
-            elif self.textfont_entry.get() == '':
-                messagebox.showerror("Configuration Error", "textfont cannot be empty.") 
 
-            elif self.fontsize_treeview_entry.get() == '':
-                messagebox.showerror("Configuration Error", "fontsize_treeview cannot be empty.") 
+            elif textfont == '':
+                messagebox.showerror("Configuration Error", "'textfont' cannot be empty.")
+
+            # 設定ファイルで指定されたフォント名が、システムにインストールされているかを確認
+            elif not textfont in self.available_fonts:
+                messagebox.showwarning("Font Warning",f"The specified font was not found. This font is not available.")
+
+
+            elif fontsize_treeview == '':
+                messagebox.showerror("Configuration Error", "'fontsize_treeview' cannot be empty.")
+
+            elif not fontsize_treeview.isdigit():
+                messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview'. \nIt must be an integer.")
 
             elif not (fontsize_min <= int(fontsize_treeview) <= fontsize_max):
                 messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
 
-            elif self.fontsize_textbox_entry.get() == '':
-                messagebox.showerror("Configuration Error", "fontsize_textbox cannot be empty.") 
+
+            elif fontsize_textbox == '':
+                messagebox.showerror("Configuration Error", "'fontsize_textbox' cannot be empty.")
+
+            elif not fontsize_textbox.isdigit():
+                messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox'. \nIt must be an integer.")
 
             elif not (fontsize_min <= int(fontsize_textbox) <= fontsize_max):
                 messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
 
+
+            elif not check_datetime_format:
+                messagebox.showerror("Configuration Error",f"Invalid character found in 'datetime_format'.")
+
+
             else:  # バリデーションがすべて通ったときのみ実施する
+                config['Settings']['lang'] = self.lang_var.get()
+                config['Settings']['increment_unit'] = self.increment_unit_var.get()
+                config['Settings']['messages'] = messages_var.get()
+                config['Settings']['autosave_json'] = autosave_json_var.get()
+                config['Settings']['backup_json'] = backup_json_var.get()
+                config['Settings']['multiple_boot'] = multiple_boot_var.get()
+                config['Settings']['window_width'] = self.window_width_entry.get()
+                config['Settings']['window_height'] = self.window_height_entry.get()
+                config['Settings']['itemarea_displines'] = self.itemarea_displines_entry.get()
+                config['Settings']['textfont'] = self.textfont_combobox.get()
+                config['Settings']['fontsize_treeview'] = self.fontsize_treeview_entry.get()
+                config['Settings']['fontsize_textbox'] = self.fontsize_textbox_entry.get()
+                config['Settings']['datetime_format'] = self.datetime_format_entry.get().replace('%', '%%')
+
                 with open(settings_path, 'w') as configfile:
-                    config.write(configfile)
+                    config.write(configfile, space_around_delimiters=False)
+
+                    # iniファイルのクリンナップ
+                    cleanup_ini_file(settings_path)
 
                     # 親ウインドウ側の変数更新とメソッド呼び出しによる、
                     # 「辞書オートセーブ」チェックボックスへのiniファイル設定の反映
@@ -269,7 +319,6 @@ class settings(tk.Toplevel):
                         messagebox.showinfo("Settings","Settings saved successfully.\nRestart the application to apply the changes.")
                     elif lang == 'ja':
                         messagebox.showinfo("設定", "設定を保存しました。\n設定を反映するにはアプリを再起動してください。")
-
 
         def close_window():
             self.grab_release()
@@ -303,6 +352,22 @@ class settings(tk.Toplevel):
 
         # コンストラクタは None を返す必要がある
         return None
+
+
+def cleanup_ini_file(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    # 有効な設定行とセクション見出しのみを保持
+    valid_lines = []
+    for line in lines:
+        line = line.strip()
+        if line and (line.startswith('[') or '=' in line):
+            valid_lines.append(line + '\n')
+
+    # クリーンアップされた内容を書き込む
+    with open(file_path, 'w') as file:
+        file.writelines(valid_lines)
 
 
 
