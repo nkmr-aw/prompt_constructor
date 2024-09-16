@@ -1,9 +1,10 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Menu
-import tkinter.font as tkFont
-import configparser
+# -*- coding: utf-8 -*-
 import os
 import sys
+import configparser
+import tkinter as tk
+import tkinter.font as tkFont
+from tkinter import ttk, messagebox
 
 
 # 設定ファイルのパス
@@ -302,7 +303,7 @@ class settings(tk.Toplevel):
                 config['Settings']['datetime_format'] = self.datetime_format_entry.get().replace('%', '%%')
 
                 with open(settings_path, 'w') as configfile:
-                    config.write(configfile, space_around_delimiters=False)
+                    config.write(configfile)
 
                     # iniファイルのクリンナップ
                     cleanup_ini_file(settings_path)

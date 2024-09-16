@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import json
 import configparser
-import tkinter as tk
-from tkinter import ttk, messagebox, Menu
-import tkinter.font as tkFont
-from glob import glob
 import re
+import json
 import random
+import tkinter as tk
+import tkinter.font as tkFont
+from tkinter import ttk, messagebox, Menu
+from glob import glob
 from settings_window import settings, cleanup_ini_file
 
 
-version = "1.0.18"
+version = "1.0.19"
 
 
 # 言語設定の読み込み
@@ -35,7 +35,7 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'multiple_boot': 'disable',
     }
     with open(settings_path, 'w') as configfile:
-        config.write(configfile, space_around_delimiters=False)
+        config.write(configfile)
 
 else:  # iniファイルが既にある場合は読み込むが、設定値があるかチェックし、ない場合は追加する
     # ゴミ除去(保険処理)
@@ -70,59 +70,47 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
 
     # 設定をINIファイルに書き込む
     with open(settings_path, 'w') as configfile:
-        config.write(configfile, space_around_delimiters=False)
+        config.write(configfile)
 
 
 # 設定値のバリデーション
-lang = config['Settings']['lang']
+lang = config['Settings'].get('lang', 'en')
 if lang not in ['en', 'ja']:
     messagebox.showerror("Configuration Error", "Invalid value set for 'lang'. \nIt must be 'en' or 'ja'.")
     sys.exit(1)
 
 
-increment_unit = float(config['Settings'].get('increment_unit', '0.1'))
+increment_unit = config['Settings'].getfloat('increment_unit', '0.05')
 if increment_unit not in [0.05, 0.1]:
     messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
     sys.exit(1)
 
 
 # ウィンドウサイズの取得
-window_width = config['Settings'].get('window_width', '800')
-window_height = config['Settings'].get('window_height', '600')
+window_width = config['Settings'].getint('window_width', 1000)
+window_height = config['Settings'].getint('window_height', 600)
 if window_width == '':
     messagebox.showerror("Configuration Error", "'window_width' cannot be empty.")
     sys.exit(1)
-if not window_width.isdigit():
-    messagebox.showerror("Configuration Error", "Invalid value set for 'window_width'. \nIt must be an integer.")
-    sys.exit(1)
 if window_height == '':
     messagebox.showerror("Configuration Error", "'window_height' cannot be empty.")
-    sys.exit(1)
-if not window_height.isdigit():
-    messagebox.showerror("Configuration Error", "Invalid value set for 'window_height'. \nIt must be an integer.")
     sys.exit(1)
 
 
 fontsize_min = 8
 fontsize_max = 32
-fontsize_treeview = (config['Settings'].get('fontsize_treeview', '12'))
+fontsize_treeview = (config['Settings'].getint('fontsize_treeview', 12))
 if fontsize_treeview == '':
     messagebox.showerror("Configuration Error", "'fontsize_treeview' cannot be empty.")
-    sys.exit(1)
-if not fontsize_treeview.isdigit():
-    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_treeview'. \nIt must be an integer.")
     sys.exit(1)
 if not fontsize_min <= int(fontsize_treeview) <= fontsize_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
     sys.exit(1)
 
 
-fontsize_textbox = (config['Settings'].get('fontsize_textbox', '12'))
+fontsize_textbox = (config['Settings'].getint('fontsize_textbox', 12))
 if fontsize_textbox == '':
     messagebox.showerror("Configuration Error", "'fontsize_textbox' cannot be empty.")
-    sys.exit(1)
-if not fontsize_textbox.isdigit():
-    messagebox.showerror("Configuration Error", "Invalid value set for 'fontsize_textbox'. \nIt must be an integer.")
     sys.exit(1)
 if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
@@ -132,24 +120,24 @@ if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
 # アイテム欄の表示行数(高さ)
 itemarea_displines_min = 1
 itemarea_displines_max = 20
-itemarea_displines = config['Settings'].get('itemarea_displines', '5')
+itemarea_displines = config['Settings'].getint('itemarea_displines', '5')
 if itemarea_displines == '':
     messagebox.showerror("Configuration Error", "'itemarea_displines' cannot be empty.")
-    sys.exit(1)
-if not itemarea_displines.isdigit():
-    messagebox.showerror("Configuration Error", "Invalid value set for 'itemarea_displines'. \nIt must be an integer.")
     sys.exit(1)
 if not itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max:
     messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
     sys.exit(1)
 
-
 # textfontの下記以外のチェックはstartメソッドで実施(理由もそちらに記載)
-textfont = config['Settings']['textfont']
+textfont = config['Settings'].get('textfont', 'TkDefaultFont')
 if textfont == '':
     messagebox.showerror("Configuration Error", "'textfont' cannot be empty.")
     sys.exit(1)
-
+not_allowed_patterns = [r'[;&|`\$]', ]
+for pattern in not_allowed_patterns:
+    if re.search(pattern, textfont, re.IGNORECASE):
+        messagebox.showerror("Configuration Error", f"Character not allowed found in 'textfont'.")
+        sys.exit(1)
 
 datetime_format = config['Settings'].get('datetime_format', '%%Y%%m%%d_%%H%%M%%S')
 # 許可するフォーマット文字列
@@ -159,15 +147,23 @@ for code in datetime_format:
         messagebox.showerror("Configuration Error",f"Invalid character found in 'datetime_format'.")
         sys.exit(1)
 
-
-# メッセージ表示設定
+# メッセージ表示設定(値がenableならTrueが、そうでなければFalseが代入される)
 messages_enabled = config['Settings'].get('messages', 'enable') == 'enable'
 
-# 自動保存設定
-autosave_json_enabled = config['Settings'].get('autosave_json', 'enable') == 'enable'
+# 自動保存設定(値がenableならTrueが、そうでなければFalseが代入される)
+autosave_json_enabled = config['Settings'].get('autosave_json', 'disable') == 'enable'
+
+# 辞書バックアップ
+backup_json = config['Settings'].get('backup_json', 'enable')
+if backup_json not in ['enable', 'disable']:
+    messagebox.showerror("Configuration Error", "Invalid value set for 'backup_json'. \nIt must be 'enable' or 'disable'.")
+    sys.exit(1)
 
 # 多重起動可否設定
-multiple_boot = config['Settings'].get('multiple_boot', 'enable')
+multiple_boot = config['Settings'].get('multiple_boot', 'disable')
+if multiple_boot not in ['enable', 'disable']:
+    messagebox.showerror("Configuration Error", "Invalid value set for 'multiple_boot'. \nIt must be 'enable' or 'disable'.")
+    sys.exit(1)
 
 
 # メッセージとラベル
@@ -1458,7 +1454,7 @@ class PromptConstructorMain:
         import datetime
         
         default_directory = 'prompt'
-        default_filename = f"prompt_saved_{datetime.datetime.now().strftime(config['Settings']['datetime_format'])}.txt"
+        default_filename = f"prompt_saved_{datetime.datetime.now().strftime(datetime_format)}.txt"
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", initialdir=default_directory, initialfile=default_filename)
         
         if file_path:
@@ -1696,7 +1692,7 @@ class PromptConstructorMain:
             pass
 
         # バックアップ設定の確認
-        if config['Settings']['backup_json'] == 'enable':
+        if backup_json == 'enable':
             # dict_chunks.jsonのバックアップ
             with open('dict_chunks.json', 'r', encoding='utf-8') as file:
                 data = json.load(file)
@@ -1949,7 +1945,7 @@ class PromptConstructorMain:
         autosave_json_enabled = self.autosave_json_var.get()
         config['Settings']['autosave_json'] = 'enable' if autosave_json_enabled else 'disable'
         with open(settings_path, 'w') as configfile:
-            config.write(configfile, space_around_delimiters=False)
+            config.write(configfile)
 
     def save_prompt_and_close(self):
         import datetime
@@ -1961,7 +1957,7 @@ class PromptConstructorMain:
             os.remove(old_file)
 
         default_directory = 'prompt'
-        default_filename = f"prompt_tmp_{datetime.datetime.now().strftime(config['Settings']['datetime_format'])}.txt"
+        default_filename = f"prompt_tmp_{datetime.datetime.now().strftime(datetime_format)}.txt"
         file_path = os.path.join(default_directory, default_filename)
 
         content = self.text_box_bottom.get(1.0, tk.END)  # 末尾の空白を残すためにrstripしない
