@@ -16,7 +16,7 @@ If you rename 'prompt_constructor.py' to 'prompt_constructor.pyw' and run it dir
 Note that a black screen does not interfere with the operation of the application. It's just an eyesore.  
 
 Python must be installed in your environment. The assumed version is Python 3.12.x or higher.  
-There are files and folders that are automatically created when you run the program for the first time. Works entirely locally. 
+There are files and folders that are automatically created when you run the program for the first time. Works entirely locally.  
 
 ### Uninstallation
 The registry is not used, and uninstallation is completed by deleting the entire folder.  
