@@ -12,7 +12,7 @@ from glob import glob
 from settings_window import settings, cleanup_ini_file
 
 
-version = "1.0.19"
+version = "1.0.20"
 
 
 # 言語設定の読み込み
@@ -593,6 +593,17 @@ class PromptConstructorMain:
         # イベントバインド
         self.text_box_search.bind("<<Modified>>", self.on_entry_change)
         self.text_box_search.bind('<KeyRelease>', self.update_highlight)
+
+        self.text_box_top.bind('<ButtonRelease-1>', self.update_highlight)  # マウスボタンが離されたときに呼び出す
+        self.text_box_top.bind('<B1-Motion>', self.update_highlight)  # ドラッグ中に呼び出す
+        self.text_box_top.bind('<KeyRelease>', self.update_highlight)
+        self.text_box_top.bind('<<Selection>>', self.update_highlight)
+        self.text_box_top.bind('<Control-a>', self.update_highlight)
+        # 右クリックメニューからの選択にも対応
+        self.text_box_top.bind('<<Paste>>', self.update_highlight)
+        # ファイル読み込み時
+        self.text_box_top.bind('<<UpdateText>>', self.update_highlight)
+
         self.text_box_bottom.bind('<ButtonRelease-1>', self.update_highlight)  # マウスボタンが離されたときに呼び出す
         self.text_box_bottom.bind('<B1-Motion>', self.update_highlight)  # ドラッグ中に呼び出す
         self.text_box_bottom.bind('<KeyRelease>', self.update_highlight)
@@ -922,6 +933,8 @@ class PromptConstructorMain:
                 self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
                 self.last_selected_parent = selected_item[0]
                 self.last_selected_child = None
+            # ハイライト処理
+            self.update_highlight()
         
         # 削除ボタンと更新ボタンの有効・無効切り替え
         if tree in [self.tree1, self.tree2]:
@@ -1589,67 +1602,70 @@ class PromptConstructorMain:
             self.text_box_bottom.delete(1.0, tk.END)
 
     def update_highlight(self, event=None):
-        # Entryウィジェットから検索テキストを取得
-        input_text = self.text_box_search.get().strip()
+        text_widgets = [self.text_box_bottom, self.text_box_top]
 
-        # プレースホルダーテキストの場合は空文字列として扱う
-        if input_text == self.text_box_search.placeholder:
-            input_text = ""
+        for widget in text_widgets:
+            # Entryウィジェットから検索テキストを取得
+            input_text = self.text_box_search.get().strip()
 
-        # すべてのタグを削除
-        self.text_box_bottom.tag_remove("highlight", "1.0", tk.END)
-        self.text_box_bottom.tag_remove("selected", "1.0", tk.END)
-        self.text_box_bottom.tag_remove("selected_highlight", "1.0", tk.END)
+            # プレースホルダーテキストの場合は空文字列として扱う
+            if input_text == self.text_box_search.placeholder:
+                input_text = ""
 
-        # 選択範囲の取得
-        try:
-            sel_start = self.text_box_bottom.index(tk.SEL_FIRST)
-            sel_end = self.text_box_bottom.index(tk.SEL_LAST)
-            self.text_box_bottom.tag_add("selected", sel_start, sel_end)
-        except tk.TclError:
-            sel_start = sel_end = None
+            # すべてのタグを削除
+            widget.tag_remove("highlight", "1.0", tk.END)
+            widget.tag_remove("selected", "1.0", tk.END)
+            widget.tag_remove("selected_highlight", "1.0", tk.END)
 
-        # 検索文字列のハイライト
-        if input_text:
-            start_index = "1.0"
-            while True:
-                start_index = self.text_box_bottom.search(input_text, start_index, stopindex=tk.END)
-                if not start_index:
-                    break
-                end_index = f"{start_index}+{len(input_text)}c"
-                self.text_box_bottom.tag_add("highlight", start_index, end_index)
-                start_index = end_index
+            # 選択範囲の取得
+            try:
+                sel_start =widget.index(tk.SEL_FIRST)
+                sel_end = widget.index(tk.SEL_LAST)
+                widget.tag_add("selected", sel_start, sel_end)
+            except tk.TclError:
+                sel_start = sel_end = None
 
-        # 選択範囲と検索ハイライトの重複を処理
-        if sel_start and sel_end:
-            highlight_ranges = self.text_box_bottom.tag_ranges("highlight")
-            for i in range(0, len(highlight_ranges), 2):
-                h_start, h_end = highlight_ranges[i], highlight_ranges[i + 1]
+            # 検索文字列のハイライト
+            if input_text:
+                start_index = "1.0"
+                while True:
+                    start_index = widget.search(input_text, start_index, stopindex=tk.END)
+                    if not start_index:
+                        break
+                    end_index = f"{start_index}+{len(input_text)}c"
+                    widget.tag_add("highlight", start_index, end_index)
+                    start_index = end_index
 
-                # インデックスを比較可能な形式に変換
-                sel_start_parts = list(map(int, self.text_box_bottom.index(sel_start).split('.')))
-                sel_end_parts = list(map(int, self.text_box_bottom.index(sel_end).split('.')))
-                h_start_parts = list(map(int, self.text_box_bottom.index(h_start).split('.')))
-                h_end_parts = list(map(int, self.text_box_bottom.index(h_end).split('.')))
+            # 選択範囲と検索ハイライトの重複を処理
+            if sel_start and sel_end:
+                highlight_ranges = widget.tag_ranges("highlight")
+                for i in range(0, len(highlight_ranges), 2):
+                    h_start, h_end = highlight_ranges[i], highlight_ranges[i + 1]
 
-                # 開始位置の最大値と終了位置の最小値を計算
-                overlap_start_parts = max(sel_start_parts, h_start_parts)
-                overlap_end_parts = min(sel_end_parts, h_end_parts)
+                    # インデックスを比較可能な形式に変換
+                    sel_start_parts = list(map(int, widget.index(sel_start).split('.')))
+                    sel_end_parts = list(map(int, widget.index(sel_end).split('.')))
+                    h_start_parts = list(map(int, widget.index(h_start).split('.')))
+                    h_end_parts = list(map(int, widget.index(h_end).split('.')))
 
-                # 結果をTkinterのインデックス形式に戻す
-                overlap_start = f"{overlap_start_parts[0]}.{overlap_start_parts[1]}"
-                overlap_end = f"{overlap_end_parts[0]}.{overlap_end_parts[1]}"
+                    # 開始位置の最大値と終了位置の最小値を計算
+                    overlap_start_parts = max(sel_start_parts, h_start_parts)
+                    overlap_end_parts = min(sel_end_parts, h_end_parts)
 
-                if self.text_box_bottom.compare(overlap_start, "<", overlap_end):
-                    self.text_box_bottom.tag_add("selected_highlight", overlap_start, overlap_end)
+                    # 結果をTkinterのインデックス形式に戻す
+                    overlap_start = f"{overlap_start_parts[0]}.{overlap_start_parts[1]}"
+                    overlap_end = f"{overlap_end_parts[0]}.{overlap_end_parts[1]}"
 
-        # タグの優先順位とスタイルを設定
-        self.text_box_bottom.tag_raise("selected_highlight", "highlight")
-        self.text_box_bottom.tag_raise("selected_highlight", "selected")
+                    if widget.compare(overlap_start, "<", overlap_end):
+                        widget.tag_add("selected_highlight", overlap_start, overlap_end)
 
-        self.text_box_bottom.tag_config("highlight", background="yellow", foreground="black")
-        self.text_box_bottom.tag_config("selected", background="SystemHighlight", foreground="SystemHighlightText")
-        self.text_box_bottom.tag_config("selected_highlight", background="red", foreground="white")
+            # タグの優先順位とスタイルを設定
+            widget.tag_raise("selected_highlight", "highlight")
+            widget.tag_raise("selected_highlight", "selected")
+
+            widget.tag_config("highlight", background="yellow", foreground="black")
+            widget.tag_config("selected", background="SystemHighlight", foreground="SystemHighlightText")
+            widget.tag_config("selected_highlight", background="red", foreground="white")
 
 
     def on_entry_change(*args):
@@ -1825,6 +1841,9 @@ class PromptConstructorMain:
                     self.update_button.config(state=tk.NORMAL)
         else:
             self.text_box_top.delete(1.0, tk.END)
+
+        # ハイライト処理
+        self.update_highlight()
 
 
     # Shift込みで監視している
