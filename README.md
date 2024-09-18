@@ -15,8 +15,8 @@ If you rename 'prompt_constructor.py' to 'prompt_constructor.pyw' and run it dir
 (In this case, the launcher will not be usable unless codes inside are modified, but this is not a problem because changing the extension of the main body will make it worthless.)  
 Note that a black screen does not interfere with the operation of the application. It's just an eyesore.  
 
-Python must be installed in your environment. The assumed version is Python 3.12.5 or higher.  
-There are files and folders that are automatically created when you run the program for the first time.  
+Python must be installed in your environment. The assumed version is Python 3.12.x or higher.  
+There are files and folders that are automatically created when you run the program for the first time. Works entirely locally. 
 
 ### Uninstallation
 The registry is not used, and uninstallation is completed by deleting the entire folder.  
@@ -52,8 +52,8 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 (この場合ランチャーは中身を修正しないと使えなくなりますが、本体の拡張子を変えると利用価値はなくなりますので問題はありません)  
 なお、黒い画面が出てもアプリの動作には支障はありません。目障りなだけです。  
 
-実行環境にPythonがインストールされている必要があります。 想定バージョンはPython 3.12.5 以上です。  
-初回実行時に自動作成されるファイルやフォルダがあります。  
+実行環境にPythonがインストールされている必要があります。 想定バージョンはPython 3.12.x 以上です。  
+初回実行時に自動作成されるファイルやフォルダがあります。なお、完全にローカルで実行できます。
 
 ### アンインストール
 レジストリなどは使用していませんので、フォルダごと削除すればアンインストール完了です。  
