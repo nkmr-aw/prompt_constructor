@@ -12,7 +12,7 @@ from glob import glob
 from settings_window import settings, cleanup_ini_file
 
 
-version = "1.0.20"
+version = "1.0.21"
 
 
 # 言語設定の読み込み
@@ -585,13 +585,12 @@ class PromptConstructorMain:
         
         # 検索欄
         self.text_box_search = EntryWithPlaceholder(self.right_frame_bottom, placeholder=messages[lang]['label_search'], color='gray')
-        self.text_box_search.pack()
         self.text_box_search.pack(fill=tk.BOTH, padx=5, pady=5)
         self.text_box_search.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_search.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
 
         # イベントバインド
-        self.text_box_search.bind("<<Modified>>", self.on_entry_change)
+        # self.text_box_search.bind("<<Modified>>", self.on_entry_change)
         self.text_box_search.bind('<KeyRelease>', self.update_highlight)
 
         self.text_box_top.bind('<ButtonRelease-1>', self.update_highlight)  # マウスボタンが離されたときに呼び出す
@@ -599,20 +598,20 @@ class PromptConstructorMain:
         self.text_box_top.bind('<KeyRelease>', self.update_highlight)
         self.text_box_top.bind('<<Selection>>', self.update_highlight)
         self.text_box_top.bind('<Control-a>', self.update_highlight)
-        # 右クリックメニューからの選択にも対応
-        self.text_box_top.bind('<<Paste>>', self.update_highlight)
-        # ファイル読み込み時
-        self.text_box_top.bind('<<UpdateText>>', self.update_highlight)
+        self.text_box_top.bind('<<Paste>>', self.update_highlight)  # 右クリックメニューからの選択にも対応
+        self.text_box_top.bind('<<UpdateText>>', self.update_highlight)  # ファイル読み込み時
+        self.text_box_top.bind('<<Modified>>', self.update_highlight)
 
         self.text_box_bottom.bind('<ButtonRelease-1>', self.update_highlight)  # マウスボタンが離されたときに呼び出す
         self.text_box_bottom.bind('<B1-Motion>', self.update_highlight)  # ドラッグ中に呼び出す
         self.text_box_bottom.bind('<KeyRelease>', self.update_highlight)
         self.text_box_bottom.bind('<<Selection>>', self.update_highlight)
         self.text_box_bottom.bind('<Control-a>', self.update_highlight)
-        # 右クリックメニューからの選択にも対応
-        self.text_box_bottom.bind('<<Paste>>', self.update_highlight)
-        # ファイル読み込み時
-        self.text_box_bottom.bind('<<UpdateText>>', self.update_highlight)
+        self.text_box_bottom.bind('<<Paste>>', self.update_highlight)  # 右クリックメニューからの選択にも対応
+        self.text_box_bottom.bind('<<UpdateText>>', self.update_highlight)  # ファイル読み込み時
+        self.text_box_bottom.bind('<<Modified>>', self.update_highlight)
+        self.text_box_bottom.bind('<Key>', self.update_highlight)
+
 
         # マウスホイールイベントのバインド
         self.tree1.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
@@ -1602,9 +1601,19 @@ class PromptConstructorMain:
             self.text_box_bottom.delete(1.0, tk.END)
 
     def update_highlight(self, event=None):
-        text_widgets = [self.text_box_bottom, self.text_box_top]
+        # イベントが発生したウィジェットを特定
+        if event and event.widget in [self.text_box_top, self.text_box_bottom]:
+            current_widget = event.widget
+        else:
+            current_widget = None
+
+        text_widgets = [self.text_box_top, self.text_box_bottom]
 
         for widget in text_widgets:
+            # 現在のウィジェットが指定されている場合は、そのウィジェットのみ更新
+            if current_widget and widget != current_widget:
+                continue
+
             # Entryウィジェットから検索テキストを取得
             input_text = self.text_box_search.get().strip()
 
@@ -1619,7 +1628,7 @@ class PromptConstructorMain:
 
             # 選択範囲の取得
             try:
-                sel_start =widget.index(tk.SEL_FIRST)
+                sel_start = widget.index(tk.SEL_FIRST)
                 sel_end = widget.index(tk.SEL_LAST)
                 widget.tag_add("selected", sel_start, sel_end)
             except tk.TclError:
@@ -1666,6 +1675,18 @@ class PromptConstructorMain:
             widget.tag_config("highlight", background="yellow", foreground="black")
             widget.tag_config("selected", background="SystemHighlight", foreground="SystemHighlightText")
             widget.tag_config("selected_highlight", background="red", foreground="white")
+
+        # イベント処理後に更新を確実に行うため、afterメソッドを使用
+        self.after_id = self.root.after(10, self.delayed_highlight_update)
+
+    def delayed_highlight_update(self):
+        # after_idをクリア
+        if hasattr(self, 'after_id'):
+            self.root.after_cancel(self.after_id)
+            del self.after_id
+
+        # 両方のテキストボックスに対して強制的に更新を行う
+        self.update_highlight()
 
 
     def on_entry_change(*args):
