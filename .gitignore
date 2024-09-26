@@ -10,3 +10,5 @@ resources.rc
 *.json
 *.spec
 *.txt
+!requirements.txt
+app.lock

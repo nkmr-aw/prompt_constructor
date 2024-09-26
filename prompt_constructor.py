@@ -10,9 +10,10 @@ import tkinter.font as tkFont
 from tkinter import ttk, messagebox, Menu
 from glob import glob
 from settings_window import settings, cleanup_ini_file
+from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.21"
+version = "1.0.22"
 
 
 # 言語設定の読み込み
@@ -21,16 +22,16 @@ settings_path = os.path.join(os.path.dirname(sys.argv[0]), 'settings.ini')
 if not os.path.exists(settings_path):  # iniファイルがない場合はデフォルト値で新規作成
     config['Settings'] = {
         'lang': 'en', 
-        'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
-        'window_width': '1000',  # 初期ウィンドウ幅
-        'window_height': '600',   # 初期ウィンドウ高さ
-        'itemarea_displines': '5',  # アイテム欄の表示行数(高さ)
+        'increment_unit': 0.05,  # 0.1単位か0.05単位のみ許可
+        'window_width': 1000,  # 初期ウィンドウ幅
+        'window_height': 600,   # 初期ウィンドウ高さ
+        'itemarea_displines': 5,  # アイテム欄の表示行数(高さ)
         'messages': 'enable',  # メッセージの表示(enable)と抑止(disable)
         'autosave_json': 'disable',  # JSON辞書ファイルの自動保存設定
         'backup_json': 'enable',  # アプリ起動時にJSON辞書ファイルを自動バックアップする設定
         'textfont': 'TkDefaultFont',  # TkDefaultFontはTkinterのデフォルトシステムフォント
-        'fontsize_treeview': '12',  # ツリー表示のフォントサイズ
-        'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
+        'fontsize_treeview': 12,  # ツリー表示のフォントサイズ
+        'fontsize_textbox': 12,  # テキストボックス表示のフォントサイズ
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
         'multiple_boot': 'disable',
     }
@@ -50,16 +51,16 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
         # 各設定項目の確認とデフォルト値の追加
     default_settings = {
         'lang': 'en', 
-        'increment_unit': '0.05',
-        'window_width': '1000',
-        'window_height': '600',
-        'itemarea_displines': '5',
+        'increment_unit': 0.05,
+        'window_width': 1000,
+        'window_height': 600,
+        'itemarea_displines': 5,
         'messages': 'enable',
         'autosave_json': 'disable',
         'backup_json': 'enable',
         'textfont': 'TkDefaultFont',
-        'fontsize_treeview': '12',
-        'fontsize_textbox': '12',
+        'fontsize_treeview': 12,
+        'fontsize_textbox': 12,
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',
         'multiple_boot': 'disable',
     }
@@ -71,99 +72,6 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
     # 設定をINIファイルに書き込む
     with open(settings_path, 'w') as configfile:
         config.write(configfile)
-
-
-# 設定値のバリデーション
-lang = config['Settings'].get('lang', 'en')
-if lang not in ['en', 'ja']:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'lang'. \nIt must be 'en' or 'ja'.")
-    sys.exit(1)
-
-
-increment_unit = config['Settings'].getfloat('increment_unit', '0.05')
-if increment_unit not in [0.05, 0.1]:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'increment_unit'. \nIt must be 0.05 or 0.1.")
-    sys.exit(1)
-
-
-# ウィンドウサイズの取得
-window_width = config['Settings'].getint('window_width', 1000)
-window_height = config['Settings'].getint('window_height', 600)
-if window_width == '':
-    messagebox.showerror("Configuration Error", "'window_width' cannot be empty.")
-    sys.exit(1)
-if window_height == '':
-    messagebox.showerror("Configuration Error", "'window_height' cannot be empty.")
-    sys.exit(1)
-
-
-fontsize_min = 8
-fontsize_max = 32
-fontsize_treeview = (config['Settings'].getint('fontsize_treeview', 12))
-if fontsize_treeview == '':
-    messagebox.showerror("Configuration Error", "'fontsize_treeview' cannot be empty.")
-    sys.exit(1)
-if not fontsize_min <= int(fontsize_treeview) <= fontsize_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_treeview' \nIt must be between {fontsize_min} and {fontsize_max}.")
-    sys.exit(1)
-
-
-fontsize_textbox = (config['Settings'].getint('fontsize_textbox', 12))
-if fontsize_textbox == '':
-    messagebox.showerror("Configuration Error", "'fontsize_textbox' cannot be empty.")
-    sys.exit(1)
-if not fontsize_min <= int(fontsize_textbox) <= fontsize_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'fontsize_textbox' \nIt must be between {fontsize_min} and {fontsize_max}.")
-    sys.exit(1)
-
-
-# アイテム欄の表示行数(高さ)
-itemarea_displines_min = 1
-itemarea_displines_max = 20
-itemarea_displines = config['Settings'].getint('itemarea_displines', '5')
-if itemarea_displines == '':
-    messagebox.showerror("Configuration Error", "'itemarea_displines' cannot be empty.")
-    sys.exit(1)
-if not itemarea_displines_min <= int(itemarea_displines) <= itemarea_displines_max:
-    messagebox.showerror("Configuration Error", f"Invalid value set for 'itemarea_displines'. \nIt must be between {itemarea_displines_min} and {itemarea_displines_max}.")
-    sys.exit(1)
-
-# textfontの下記以外のチェックはstartメソッドで実施(理由もそちらに記載)
-textfont = config['Settings'].get('textfont', 'TkDefaultFont')
-if textfont == '':
-    messagebox.showerror("Configuration Error", "'textfont' cannot be empty.")
-    sys.exit(1)
-not_allowed_patterns = [r'[;&|`\$]', ]
-for pattern in not_allowed_patterns:
-    if re.search(pattern, textfont, re.IGNORECASE):
-        messagebox.showerror("Configuration Error", f"Character not allowed found in 'textfont'.")
-        sys.exit(1)
-
-datetime_format = config['Settings'].get('datetime_format', '%%Y%%m%%d_%%H%%M%%S')
-# 許可するフォーマット文字列
-allowed_format_codes = "%Y%m%d%H%M%S_.-"
-for code in datetime_format:
-    if code not in allowed_format_codes:
-        messagebox.showerror("Configuration Error",f"Invalid character found in 'datetime_format'.")
-        sys.exit(1)
-
-# メッセージ表示設定(値がenableならTrueが、そうでなければFalseが代入される)
-messages_enabled = config['Settings'].get('messages', 'enable') == 'enable'
-
-# 自動保存設定(値がenableならTrueが、そうでなければFalseが代入される)
-autosave_json_enabled = config['Settings'].get('autosave_json', 'disable') == 'enable'
-
-# 辞書バックアップ
-backup_json = config['Settings'].get('backup_json', 'enable')
-if backup_json not in ['enable', 'disable']:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'backup_json'. \nIt must be 'enable' or 'disable'.")
-    sys.exit(1)
-
-# 多重起動可否設定
-multiple_boot = config['Settings'].get('multiple_boot', 'disable')
-if multiple_boot not in ['enable', 'disable']:
-    messagebox.showerror("Configuration Error", "Invalid value set for 'multiple_boot'. \nIt must be 'enable' or 'disable'.")
-    sys.exit(1)
 
 
 # メッセージとラベル
@@ -369,6 +277,13 @@ lock_file_path = 'app.lock'
 
 class PromptConstructorMain:
     def __init__(self):
+
+        try:
+            self.load_settings()
+
+        except Exception as e:
+            messagebox.showerror("Configuration Error", str(e))
+            exit(1)
 
         if multiple_boot == 'disable':
             if os.path.exists(lock_file_path):
@@ -679,6 +594,58 @@ class PromptConstructorMain:
         self.load_latest_prompt_file()
 
         self.start()
+
+
+    def load_settings(self):
+        """設定値を読み込み、バリデーションとサニタイズを行う関数
+        """
+        config = configparser.ConfigParser()
+        settings_path = os.path.join(os.path.dirname(sys.argv[0]), 'settings.ini')
+        config.read(settings_path)
+
+        settings = {}
+        # for key in config['Settings']:
+        #     settings[key] = config['Settings'][key]
+        settings = {
+            'lang': config['Settings']['lang'],
+            'increment_unit': float(config['Settings']['increment_unit']),
+            'window_width': int(config['Settings']['window_width']),
+            'window_height': int(config['Settings']['window_height']),
+            'itemarea_displines': int(config['Settings']['itemarea_displines']),
+            'messages': config['Settings']['messages'],
+            'autosave_json': config['Settings']['autosave_json'],
+            'backup_json': config['Settings']['backup_json'],
+            'textfont': config['Settings']['textfont'],
+            'fontsize_treeview': int(config['Settings']['fontsize_treeview']),
+            'fontsize_textbox': int(config['Settings']['fontsize_textbox']),
+            'datetime_format': config['Settings']['datetime_format'],
+            'multiple_boot': config['Settings']['multiple_boot'],
+        }
+
+        is_valid, errors = validate_settings(settings)
+        if not is_valid:
+            error_message = "\n".join([f"{key}: {value}" for key, value in errors.items()])
+            messagebox.showerror("Configuration Error", error_message)
+            sys.exit(1)
+
+        # サニタイズと変数への代入
+        global lang, increment_unit, window_width, window_height, itemarea_displines
+        global messages_enabled, autosave_json_enabled, backup_json, textfont
+        global fontsize_treeview, fontsize_textbox, datetime_format, multiple_boot
+
+        lang = sanitize_input(settings['lang'], 'str')
+        increment_unit = sanitize_input(settings['increment_unit'], 'float')
+        window_width = sanitize_input(settings['window_width'], 'int')
+        window_height = sanitize_input(settings['window_height'], 'int')
+        itemarea_displines = sanitize_input(settings['itemarea_displines'], 'int')
+        messages_enabled = sanitize_input(settings['messages'], 'bool')
+        autosave_json_enabled = sanitize_input(settings['autosave_json'], 'bool')
+        backup_json = sanitize_input(settings['backup_json'], 'str')
+        textfont = sanitize_input(settings['textfont'], 'str')
+        fontsize_treeview = sanitize_input(settings['fontsize_treeview'], 'int')
+        fontsize_textbox = sanitize_input(settings['fontsize_textbox'], 'int')
+        datetime_format = sanitize_input(settings['datetime_format'], 'str')
+        multiple_boot = sanitize_input(settings['multiple_boot'], 'str')
 
 
     def start(self):
