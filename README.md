@@ -17,9 +17,9 @@ Run 'prompt_constructor_launcher.pyw' after 'git clone' to an appropriate locati
 When you run 'prompt_constructor.py', you can start and use the application normally, but get an extra black screen.  
 Running it via 'prompt_constructor_launcher.pyw' will suppress the black screen.  
 If you rename 'prompt_constructor.py' to 'prompt_constructor.pyw' and run it directly, you can suppress the black screen as well.  
-(In this case, the launcher will not be usable unless codes inside are modified, but this is not a problem because changing the extension of the main body will make it worthless.)  
 Note that a black screen does not interfere with the operation of the application. It's just an eyesore.  
-There are files and folders that are automatically created when you run the program for the first time. Works entirely locally.  
+There are files and folders that are automatically created when you run the program for the first time. 
+Works entirely locally.  
 
 ### Uninstallation
 The registry is not used, and uninstallation is completed by deleting the entire folder.  
@@ -55,11 +55,10 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 ### インストールと実行方法
 適当な場所に'git clone'してから'prompt_constructor_launcher.pyw'を実行します。  
 'prompt_constructor.py'を実行しても普通に起動してアプリを使用できますが、余計な黒い画面が出てきます。
-'prompt_constructor_launcher.pyw'経由で実行すると黒い画面を抑止することができます。  
-また、'prompt_constructor.py'を'prompt_constructor.pyw'にリネームして直接実行すると、同様に黒い画面が抑止できます。  
-(この場合ランチャーは中身を修正しないと使えなくなりますが、本体の拡張子を変えると利用価値はなくなりますので問題はありません)  
+'prompt_constructor_launcher.pyw'経由で実行すると黒い画面を抑止することができます。   
 なお、黒い画面が出てもアプリの動作には支障はありません。目障りなだけです。  
-初回実行時に自動作成されるファイルやフォルダがあります。なお、完全にローカルで実行できます。
+初回実行時に自動作成されるファイルやフォルダがあります。
+完全にローカルで実行できます。
 
 ### アンインストール
 レジストリなどは使用していませんので、フォルダごと削除すればアンインストール完了です。  
