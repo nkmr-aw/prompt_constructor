@@ -15,9 +15,9 @@ The following must be installed in your environment.
 ### Installation & How to run
 Run 'prompt_constructor_launcher.pyw' after 'git clone' to an appropriate location.  
 When you run 'prompt_constructor.py', you can start and use the application normally, but get an extra black screen.  
-Running it via 'prompt_constructor_launcher.pyw' will suppress the black screen.  
-If you rename 'prompt_constructor.py' to 'prompt_constructor.pyw' and run it directly, you can suppress the black screen as well.  
-Note that a black screen does not interfere with the operation of the application. It's just an eyesore.  
+Running it via 'prompt_constructor_launcher.pyw' will suppress the black screen.
+Note that a black screen does not interfere with the operation of the application. It's just an eyesore. 
+
 There are files and folders that are automatically created when you run the program for the first time. 
 Works entirely locally.  
 
@@ -56,7 +56,8 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 適当な場所に'git clone'してから'prompt_constructor_launcher.pyw'を実行します。  
 'prompt_constructor.py'を実行しても普通に起動してアプリを使用できますが、余計な黒い画面が出てきます。
 'prompt_constructor_launcher.pyw'経由で実行すると黒い画面を抑止することができます。   
-なお、黒い画面が出てもアプリの動作には支障はありません。目障りなだけです。  
+なお、黒い画面が出てもアプリの動作には支障はありません。目障りなだけです。 
+
 初回実行時に自動作成されるファイルやフォルダがあります。
 完全にローカルで実行できます。
 
