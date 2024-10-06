@@ -271,6 +271,9 @@ initial_data_favorites = {
     "Fav:Words": []
     }
 
+fontsize_min = 8
+fontsize_max = 32
+
 # アプリケーションの開始時にロックファイルを作成
 lock_file_path = 'app.lock'
 
@@ -646,6 +649,8 @@ class PromptConstructorMain:
         fontsize_textbox = sanitize_input(settings['fontsize_textbox'], 'int')
         datetime_format = sanitize_input(settings['datetime_format'], 'str')
         multiple_boot = sanitize_input(settings['multiple_boot'], 'str')
+
+
 
 
     def start(self):
