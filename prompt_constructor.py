@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.23"
+version = "1.0.24"
 
 
 # 言語設定の読み込み
@@ -275,6 +275,7 @@ initial_data_favorites = {
 
 fontsize_min = 8
 fontsize_max = 32
+rowheight_treeview = 1  # 後で更新
 
 # アプリケーションの開始時にロックファイルを作成
 lock_file_path = 'app.lock'
@@ -282,6 +283,7 @@ lock_file_path = 'app.lock'
 
 class PromptConstructorMain:
     def __init__(self):
+        global rowheight_treeview
 
         try:
             self.load_settings()
@@ -326,7 +328,7 @@ class PromptConstructorMain:
         self.is_shift_pressed = False
 
         style = ttk.Style()
-        style.configure("Treeview", font=(textfont, fontsize_treeview))  # ツリービューのスタイル設定
+        style.configure("Treeview", font=(textfont, fontsize_treeview), rowheight=rowheight_treeview)  # ツリービューのスタイル設定
 
         # 左右ペインを分割するためのPanedWindow
         self.paned_window = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, sashwidth=10)
@@ -551,6 +553,9 @@ class PromptConstructorMain:
         self.text_box_search.bind("<Button-2>", self.on_mouseclick_rightpane)
         # フォントサイズ変更関連変数 初期化
         self.fontsize_treeview_current = fontsize_treeview
+        rowheight_treeview = self.fontsize_treeview_current + 10
+        style = ttk.Style()
+        style.configure("Treeview", font=(textfont, self.fontsize_treeview_current), rowheight=rowheight_treeview)
         self.fontsize_textbox_current = fontsize_textbox
 
 
@@ -1850,19 +1855,21 @@ class PromptConstructorMain:
     def scroll_leftpane(self, event):
         tree = event.widget
         if event.delta < 0:
-            tree.yview_scroll(scroll_lines, "units")
+            tree.yview_scroll(scroll_lines-1, "units")
         elif event.delta > 0:
-            tree.yview_scroll(-scroll_lines, "units")
+            tree.yview_scroll(-scroll_lines-1, "units")
 
 
     # Shift込みで監視している
     def on_mousewheel_leftpane(self, event):
+        global rowheight_treeview
 
         if not event.delta < 0:
             self.fontsize_treeview_current -= 1
             self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            rowheight_treeview = self.fontsize_treeview_current + 10
             style = ttk.Style()
-            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current), rowheight=rowheight_treeview)
             self.tree1.configure(style="Treeview")
             self.tree2.configure(style="Treeview")
             self.tree3.configure(style="Treeview")
@@ -1870,29 +1877,36 @@ class PromptConstructorMain:
         elif not event.delta > 0:
             self.fontsize_treeview_current += 1
             self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            rowheight_treeview = self.fontsize_treeview_current + 10
             style = ttk.Style()
-            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current), rowheight=rowheight_treeview)
             self.tree1.configure(style="Treeview")
             self.tree2.configure(style="Treeview")
             self.tree3.configure(style="Treeview")
 
     # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
     def on_mouseclick_leftpane(self, event):
+        global rowheight_treeview
+
         if self.is_shift_pressed:  # Shiftキーが押されている場合
             # フォントサイズをini設定に戻す
             self.fontsize_treeview_current = fontsize_treeview
             self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)
+            rowheight_treeview = self.fontsize_treeview_current + 10
             style = ttk.Style()
-            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current))
+            style.configure("Treeview", font=(textfont, self.fontsize_treeview_current), rowheight=rowheight_treeview)
             self.tree1.configure(style="Treeview")
             self.tree2.configure(style="Treeview")
             self.tree3.configure(style="Treeview")
 
     # Shift込みで監視している
     def on_mousewheel_rightpane(self, event):
+        global fontsize_textbox
+
         if not event.delta < 0:
             self.fontsize_textbox_current -= 1
             self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            fontsize_textbox = self.fontsize_textbox_current
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
@@ -1900,16 +1914,20 @@ class PromptConstructorMain:
         elif not event.delta > 0:
             self.fontsize_textbox_current += 1
             self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            fontsize_textbox = self.fontsize_textbox_current
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
 
     # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
     def on_mouseclick_rightpane(self, event):
+        global fontsize_textbox
+
         if self.is_shift_pressed:  # Shiftキーが押されている場合
             # フォントサイズをini設定に戻す
             self.fontsize_textbox_current = fontsize_textbox
             self.fontsize_textbox_current = self.clamp(self.fontsize_textbox_current, fontsize_min, fontsize_max)
+            fontsize_textbox = self.fontsize_textbox_current
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
