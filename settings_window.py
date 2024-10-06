@@ -90,6 +90,16 @@ class settings(tk.Toplevel):
         self.itemarea_displines_entry.pack(side=tk.LEFT)
 
 
+        # マウスホイールによるスクロール行数設定
+        scroll_lines_frame = tk.LabelFrame(settings_frame, text="")
+        scroll_lines_frame.pack(pady=5)
+        label = tk.Label(scroll_lines_frame, text="scroll_lines: ")
+        label.pack(side=tk.LEFT)
+        self.scroll_lines_entry = tk.Entry(scroll_lines_frame)
+        self.scroll_lines_entry.insert(0, config['Settings']['scroll_lines'])
+        self.scroll_lines_entry.pack(side=tk.LEFT)
+
+
         # メッセージ表示設定
         messages_frame = tk.LabelFrame(settings_frame, text="")
         messages_frame.pack(pady=5)
@@ -200,6 +210,8 @@ class settings(tk.Toplevel):
             self.window_height_entry.insert(0, "600")
             self.itemarea_displines_entry.delete(0, tk.END)
             self.itemarea_displines_entry.insert(0, "5")
+            self.scroll_lines_entry.delete(0, tk.END)
+            self.scroll_lines_entry.insert(0, "3")
             self.textfont_combobox.set("TkDefaultFont")
             self.fontsize_treeview_entry.delete(0, tk.END)
             self.fontsize_treeview_entry.insert(0, "12")
@@ -217,6 +229,7 @@ class settings(tk.Toplevel):
                     'window_width': int(self.window_width_entry.get()),
                     'window_height': int(self.window_height_entry.get()),
                     'itemarea_displines': int(self.itemarea_displines_entry.get()),
+                    'scroll_lines': int(self.scroll_lines_entry.get()),
                     'messages': messages_var.get(),
                     'autosave_json': autosave_json_var.get(),
                     'backup_json': backup_json_var.get(),

@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.22.6"
+version = "1.0.23"
 
 
 # 言語設定の読み込み
@@ -22,16 +22,17 @@ settings_path = os.path.join(os.path.dirname(sys.argv[0]), 'settings.ini')
 if not os.path.exists(settings_path):  # iniファイルがない場合はデフォルト値で新規作成
     config['Settings'] = {
         'lang': 'en', 
-        'increment_unit': 0.05,  # 0.1単位か0.05単位のみ許可
-        'window_width': 1000,  # 初期ウィンドウ幅
-        'window_height': 600,   # 初期ウィンドウ高さ
-        'itemarea_displines': 5,  # アイテム欄の表示行数(高さ)
+        'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
+        'window_width': '1000',  # 初期ウィンドウ幅
+        'window_height': '600',   # 初期ウィンドウ高さ
+        'itemarea_displines': '5',  # アイテム欄の表示行数(高さ)
+        'scroll_lines': '3',  # マウスホイールによる単位スクロール行数
         'messages': 'enable',  # メッセージの表示(enable)と抑止(disable)
         'autosave_json': 'disable',  # JSON辞書ファイルの自動保存設定
         'backup_json': 'enable',  # アプリ起動時にJSON辞書ファイルを自動バックアップする設定
         'textfont': 'TkDefaultFont',  # TkDefaultFontはTkinterのデフォルトシステムフォント
-        'fontsize_treeview': 12,  # ツリー表示のフォントサイズ
-        'fontsize_textbox': 12,  # テキストボックス表示のフォントサイズ
+        'fontsize_treeview': '12',  # ツリー表示のフォントサイズ
+        'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
         'multiple_boot': 'disable',
     }
@@ -48,19 +49,20 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
     if 'Settings' not in config:
         config['Settings'] = {}
 
-        # 各設定項目の確認とデフォルト値の追加
+    # 各設定項目の確認とデフォルト値の追加
     default_settings = {
-        'lang': 'en', 
-        'increment_unit': 0.05,
-        'window_width': 1000,
-        'window_height': 600,
-        'itemarea_displines': 5,
+        'lang': 'en',
+        'increment_unit': '0.05',
+        'window_width': '1000',
+        'window_height': '600',
+        'itemarea_displines': '5',
+        'scroll_lines': '3',
         'messages': 'enable',
         'autosave_json': 'disable',
         'backup_json': 'enable',
         'textfont': 'TkDefaultFont',
-        'fontsize_treeview': 12,
-        'fontsize_textbox': 12,
+        'fontsize_treeview': '12',
+        'fontsize_textbox': '12',
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',
         'multiple_boot': 'disable',
     }
@@ -533,10 +535,13 @@ class PromptConstructorMain:
 
         # マウスホイールイベントのバインド
         self.tree1.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree1.bind("<MouseWheel>", self.scroll_leftpane)
         self.tree1.bind("<Button-2>", self.on_mouseclick_leftpane)
         self.tree2.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree2.bind("<MouseWheel>", self.scroll_leftpane)
         self.tree2.bind("<Button-2>", self.on_mouseclick_leftpane)
         self.tree3.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+        self.tree3.bind("<MouseWheel>", self.scroll_leftpane)
         self.tree3.bind("<Button-2>", self.on_mouseclick_leftpane)
         self.text_box_top.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
         self.text_box_top.bind("<Button-2>", self.on_mouseclick_rightpane)
@@ -615,6 +620,7 @@ class PromptConstructorMain:
             'window_width': int(config['Settings']['window_width']),
             'window_height': int(config['Settings']['window_height']),
             'itemarea_displines': int(config['Settings']['itemarea_displines']),
+            'scroll_lines': int(config['Settings']['scroll_lines']),
             'messages': config['Settings']['messages'],
             'autosave_json': config['Settings']['autosave_json'],
             'backup_json': config['Settings']['backup_json'],
@@ -632,7 +638,7 @@ class PromptConstructorMain:
             sys.exit(1)
 
         # サニタイズと変数への代入
-        global lang, increment_unit, window_width, window_height, itemarea_displines
+        global lang, increment_unit, window_width, window_height, itemarea_displines, scroll_lines
         global messages_enabled, autosave_json_enabled, backup_json, textfont
         global fontsize_treeview, fontsize_textbox, datetime_format, multiple_boot
 
@@ -641,6 +647,7 @@ class PromptConstructorMain:
         window_width = sanitize_input(settings['window_width'], 'int')
         window_height = sanitize_input(settings['window_height'], 'int')
         itemarea_displines = sanitize_input(settings['itemarea_displines'], 'int')
+        scroll_lines = sanitize_input(settings['scroll_lines'], 'int')
         messages_enabled = sanitize_input(settings['messages'], 'bool')
         autosave_json_enabled = sanitize_input(settings['autosave_json'], 'bool')
         backup_json = sanitize_input(settings['backup_json'], 'str')
@@ -1840,8 +1847,17 @@ class PromptConstructorMain:
         self.update_highlight()
 
 
+    def scroll_leftpane(self, event):
+        tree = event.widget
+        if event.delta < 0:
+            tree.yview_scroll(scroll_lines, "units")
+        elif event.delta > 0:
+            tree.yview_scroll(-scroll_lines, "units")
+
+
     # Shift込みで監視している
     def on_mousewheel_leftpane(self, event):
+
         if not event.delta < 0:
             self.fontsize_treeview_current -= 1
             self.fontsize_treeview_current = self.clamp(self.fontsize_treeview_current, fontsize_min, fontsize_max)

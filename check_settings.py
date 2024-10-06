@@ -28,6 +28,7 @@ def validate_settings(settings):
         'window_width': {'type': 'integer', 'min': 1, 'required': True},
         'window_height': {'type': 'integer', 'min': 1, 'required': True},
         'itemarea_displines': {'type': 'integer', 'min': 1, 'max': 20, 'required': True},
+        'scroll_lines': {'type': 'integer', 'min': 1, 'max': 20, 'required': True},
         'messages': {'type': 'string', 'allowed': ['enable', 'disable'], 'required': True},
         'autosave_json': {'type': 'string', 'allowed': ['enable', 'disable'], 'required': True},
         'backup_json': {'type': 'string', 'allowed': ['enable', 'disable'], 'required': True},
