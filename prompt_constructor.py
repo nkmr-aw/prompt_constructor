@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.22.5"
+version = "1.0.22.6"
 
 
 # 言語設定の読み込み
@@ -1565,6 +1565,7 @@ class PromptConstructorMain:
     def on_clear_button_click(self):
         result = messagebox.askokcancel(messages[lang]['title_clear_confirm'], messages[lang]['message_prompt_cleared'])
         if result:
+            self.save_to_history1()
             self.text_box_bottom.delete(1.0, tk.END)
 
     def update_highlight(self, event=None):
