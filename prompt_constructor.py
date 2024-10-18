@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.24"
+version = "1.0.25"
 
 
 # 言語設定の読み込み
@@ -748,6 +748,7 @@ class PromptConstructorMain:
         
         return False
 
+
     def on_ctrl_arrow_key(self, event):
         text_widget = event.widget
         
@@ -791,6 +792,7 @@ class PromptConstructorMain:
         # イベントの伝播を停止
         return "break"
 
+
     def modify_text(self, text, increase):
         # 数値部分を抽出
         match = re.search(r'^(.*?):(-?[\d.]+)$', text)
@@ -825,6 +827,7 @@ class PromptConstructorMain:
 
         new_text = f"{base_text}:{formatted_number}"
         return new_text
+
 
     def on_double_click(self, event):
         text_widget = event.widget
@@ -867,6 +870,7 @@ class PromptConstructorMain:
         text_widget.tag_add(tk.SEL, start, new_end)
 
         return "break"  # デフォルトの動作を防ぐ
+
 
     def on_tree_select(self, event):
         tree = event.widget
@@ -938,10 +942,12 @@ class PromptConstructorMain:
                 tree.item(item, open=True)
                 self.expand_children(tree, item)
 
+
     def expand_children(self, tree, item):
         for child in tree.get_children(item):
             tree.item(child, open=True)
             self.expand_children(tree, child)
+
 
     def collapse_all(self):
         for tree in [self.tree1, self.tree2, self.tree3]:
@@ -949,10 +955,12 @@ class PromptConstructorMain:
                 tree.item(item, open=False)
                 self.collapse_children(tree, item)
 
+
     def collapse_children(self, tree, item):
         for child in tree.get_children(item):
             tree.item(child, open=False)
             self.collapse_children(tree, child)
+
 
     # ツリーアイテムを左クリックで選択したときの動作
     def on_tree_item_press(self, event):
@@ -966,6 +974,7 @@ class PromptConstructorMain:
         if tree == self.tree3 and not tree.parent(self.drag_start_item):
             self.is_dragging = False  # ドラッグを禁止
             self.drag_data = {}  # ドラッグデータをクリア
+
 
     # ツリーアイテムを右クリックで選択したときの動作
     def on_tree_item_press2(self, event):
@@ -984,6 +993,7 @@ class PromptConstructorMain:
                 self.tree3.selection_set(item)
 
         self.right_click_menu(event)
+
 
     def on_tree_item_motion(self, event):
         if "item" in self.drag_data and self.drag_data["item"]:
@@ -1008,11 +1018,13 @@ class PromptConstructorMain:
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
 
+
     def on_tree_item_release(self, event):
         self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
         self.is_dragging = False  # ドラッグ終了時に is_dragging を False に設定
         if autosave_json_enabled:
             self.save_dicts_to_json()
+
 
     # 右クリックメニュー
     def right_click_menu(self, event):
@@ -1058,6 +1070,7 @@ class PromptConstructorMain:
 
         menu.post(event.x_root, event.y_root)
 
+
     def copy_item_text(self):
         current_tab = self.tab_control.index(self.tab_control.select())
         if current_tab == 0:
@@ -1081,23 +1094,36 @@ class PromptConstructorMain:
             else:
                 messagebox.showerror(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
 
+
     def clone_child_item(self, tree, selected_item):
-        # 選択されたアイテムのテキストを取得
-        item_text = tree.item(selected_item, "text")
+        if selected_item:
+            parent_item = tree.parent(selected_item[0])
+            if parent_item:
+                # 選択されたアイテムのテキストを取得
+                item_text = tree.item(selected_item, "text")
 
-        # 選択されたアイテムの親を取得
-        parent_item = tree.parent(selected_item)
+                # 選択されたアイテムの親を取得
+                parent_item = tree.parent(selected_item)
 
-        # 選択されたアイテムのインデックスを取得
-        item_index = tree.index(selected_item)
+                # 選択されたアイテムのインデックスを取得
+                item_index = tree.index(selected_item)
 
-        # 親アイテムの下に新しい子アイテムを挿入
-        tree.insert(parent_item, item_index + 1, text=item_text)
+                # 親アイテムの下に新しい子アイテムを挿入
+                cloned_item = tree.insert(parent_item, item_index + 1, text=item_text)
+                self.set_item_focus(tree, cloned_item)  # フォーカス移動
 
-        if autosave_json_enabled:
-            self.save_dicts_to_json()
-        if messages_enabled:
-            messagebox.showinfo(messages[lang]['title_clone_info'], messages[lang]['message_clone_complete'])
+                if autosave_json_enabled:
+                    self.save_dicts_to_json()
+                if messages_enabled:
+                    messagebox.showinfo(messages[lang]['title_clone_info'], messages[lang]['message_clone_complete'])
+
+
+    # ツリー上の指定したアイテムを選択状態にしてフォーカスを移し、視認できるようにスクロールする
+    def set_item_focus(self, tree, item):
+        tree.selection_set(item)  # 追加したアイテムを選択状態にする
+        tree.focus(item)  # 追加したアイテムにフォーカスを移す
+        tree.see(item)  # 追加したアイテムが見えるようにスクロール
+
 
     def add_to_favorites(self):
         current_tab = self.tab_control.index(self.tab_control.select())
@@ -1132,6 +1158,7 @@ class PromptConstructorMain:
             else:
                 messagebox.showerror(messages[lang]['title_select_error'], messages[lang]['message_select_favitem'])
 
+
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
     # 表示しているタブによる分岐処理は未記載
     def on_add_parent_button_click(self):
@@ -1156,10 +1183,11 @@ class PromptConstructorMain:
         tree.item(parent_item, open=True)  # 親アイテムを展開
         tree.selection_set(parent_item)  # 追加した親アイテムを選択状態にする
         # tree.selection_set(child_item)  # 子アイテムの選択を解除
+        self.set_item_focus(tree, parent_item)  # フォーカス移動
+
         if autosave_json_enabled:
             self.save_dicts_to_json()
-        # 追加したアイテムにフォーカスを移動
-        tree.focus(parent_item)
+
 
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
     # 表示しているタブによる分岐処理は未記載
@@ -1190,11 +1218,11 @@ class PromptConstructorMain:
         child_count = len(children) + 1
         child_item = tree.insert(parent_item, "end", text=str(child_count))  # 子アイテムを追加
         tree.item(parent_item, open=True)  # 親アイテムを展開
-        tree.selection_set(child_item)  # 追加した子アイテムを選択状態にする
+        self.set_item_focus(tree, child_item)  # フォーカス移動
+
         if autosave_json_enabled:
             self.save_dicts_to_json()
-        # 追加したアイテムにフォーカスを移動
-        tree.focus(child_item)
+
 
     def on_delete_button_click(self):
         current_tab = self.tab_control.index(self.tab_control.select())
@@ -1239,13 +1267,11 @@ class PromptConstructorMain:
                         next_item = tree.next(selected_item[0])
                         # 削除したアイテムの上のアイテムにフォーカスを移動
                         if previous_item:
-                            tree.focus(previous_item)
-                            tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                            self.set_item_focus(tree, previous_item)  # フォーカス移動
                         else:
                             # 上のアイテムがない場合は下のアイテムにフォーカスを移動
                             if next_item:
-                                tree.focus(next_item)
-                                tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+                                self.set_item_focus(tree, next_item)  # フォーカス移動
 
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
@@ -1264,13 +1290,11 @@ class PromptConstructorMain:
                             next_item = tree.next(selected_item[0])
                             # 削除したアイテムの上のアイテムにフォーカスを移動
                             if previous_item:
-                                tree.focus(previous_item)
-                                tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                                self.set_item_focus(tree, previous_item)  # フォーカス移動
                             else:
                                 # 上のアイテムがない場合は下のアイテムにフォーカスを移動
                                 if next_item:
-                                    tree.focus(next_item)
-                                    tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+                                    self.set_item_focus(tree, next_item)  # フォーカス移動
 
                             tree.delete(selected_item[0])
                             if autosave_json_enabled:
@@ -1281,13 +1305,11 @@ class PromptConstructorMain:
                         next_item = tree.next(selected_item[0])
                         # 削除したアイテムの上のアイテムにフォーカスを移動
                         if previous_item:
-                            tree.focus(previous_item)
-                            tree.selection_set(previous_item)  # 削除したアイテムの上のアイテムを選択状態にする
+                            self.set_item_focus(tree, previous_item)  # フォーカス移動
                         else:
                             # 上のアイテムがない場合は下のアイテムにフォーカスを移動
                             if next_item:
-                                tree.focus(next_item)
-                                tree.selection_set(next_item)  # 削除したアイテムの下のアイテムを選択状態にする
+                                self.set_item_focus(tree, next_item)  # フォーカス移動
 
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
@@ -1330,6 +1352,7 @@ class PromptConstructorMain:
             self.save_dicts_to_json()
         if messages_enabled:
             messagebox.showinfo(messages[lang]['title_update_complete'], messages[lang]['message_item_updated'])
+
 
     # コピー2処理を追加
     def on_copy2_button_click(self):
@@ -1386,6 +1409,7 @@ class PromptConstructorMain:
         close_button = tk.Button(self.page_button_frame, text=messages[lang]['button_close'], command=self.list_window.destroy, width=self.button_width1)
         close_button.pack(side=tk.RIGHT, padx=5)
 
+
     def load_page(self, files, page):
         # ページに応じてファイルを表示
         start_index = page * 5
@@ -1418,12 +1442,14 @@ class PromptConstructorMain:
         close_button = tk.Button(self.page_button_frame, text=messages[lang]['title_close'], command=self.list_window.destroy, width=self.button_width1)
         close_button.pack(side=tk.RIGHT, padx=5)
 
+
     def open_prompt(self, content):
         # プロンプトをテキストボックスに表示
         self.text_box_bottom.delete(1.0, tk.END)
         self.text_box_bottom.insert(tk.END, content)
         self.undo_history.append(content)
         self.text_box_bottom.event_generate("<<UpdateText>>")
+
 
     def on_load_button_click(self):
         from tkinter import filedialog
@@ -1440,6 +1466,7 @@ class PromptConstructorMain:
                 self.text_box_bottom.event_generate("<<UpdateText>>")
             if messages_enabled:
                 messagebox.showinfo(messages[lang]['title_load'], messages[lang]['message_load'])
+
 
     def on_save_button_click(self):
         if not self.text_box_bottom.get(1.0, tk.END).strip():
@@ -1460,12 +1487,14 @@ class PromptConstructorMain:
             if messages_enabled:
                 messagebox.showinfo(messages[lang]['title_save'], messages[lang]['message_save'])
 
+
     def on_copy_button_click(self):
         self.root.clipboard_clear()
         self.root.clipboard_append(self.text_box_bottom.get(1.0, tk.END).strip())
         self.root.update()
         if messages_enabled:
             messagebox.showinfo(messages[lang]['title_copy_complete'], messages[lang]['message_prompt_copied'])
+
 
     def on_shuffle_button_click(self):
         # プロンプト欄のテキストを取得
@@ -1523,6 +1552,7 @@ class PromptConstructorMain:
         # 履歴を保存
         self.save_to_history2()
 
+
     def split_words(self, text):
         # 括弧で囲まれた単語を分割する関数
         words = []
@@ -1564,7 +1594,8 @@ class PromptConstructorMain:
             return []  # 空のリストを返す
 
         return words
-    
+
+
     def toggle_lock(self):
         if self.lock_var.get():
             self.text_box_bottom.config(state=tk.DISABLED)  # 編集不可にする
@@ -1579,11 +1610,13 @@ class PromptConstructorMain:
             self.shuffle_button.config(state=tk.NORMAL)  # シャッフルボタンを有効にする
             self.clear_button.config(state=tk.NORMAL)  # クリアボタンを有効にする
 
+
     def on_clear_button_click(self):
         result = messagebox.askokcancel(messages[lang]['title_clear_confirm'], messages[lang]['message_prompt_cleared'])
         if result:
             self.save_to_history1()
             self.text_box_bottom.delete(1.0, tk.END)
+
 
     def update_highlight(self, event=None):
         # イベントが発生したウィジェットを特定
@@ -1663,6 +1696,7 @@ class PromptConstructorMain:
 
         # イベント処理後に更新を確実に行うため、afterメソッドを使用
         self.after_id = self.root.after(10, self.delayed_highlight_update)
+
 
     def delayed_highlight_update(self):
         # after_idをクリア
@@ -1884,6 +1918,7 @@ class PromptConstructorMain:
             self.tree2.configure(style="Treeview")
             self.tree3.configure(style="Treeview")
 
+
     # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
     def on_mouseclick_leftpane(self, event):
         global rowheight_treeview
@@ -1898,6 +1933,7 @@ class PromptConstructorMain:
             self.tree1.configure(style="Treeview")
             self.tree2.configure(style="Treeview")
             self.tree3.configure(style="Treeview")
+
 
     # Shift込みで監視している
     def on_mousewheel_rightpane(self, event):
@@ -1919,6 +1955,7 @@ class PromptConstructorMain:
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
 
+
     # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
     def on_mouseclick_rightpane(self, event):
         global fontsize_textbox
@@ -1931,6 +1968,7 @@ class PromptConstructorMain:
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+
 
     def clamp(self, value, vmin, vmax):
         return int(max(min(value, vmax), vmin))
@@ -1958,6 +1996,7 @@ class PromptConstructorMain:
                     self.undo_history.append(content)
             except Exception as e:
                 print(f"Error reading file: {e}")  # エラーメッセージ
+
 
     # バインド用履歴保存処理(プロンプト欄の直接のテキスト編集を監視するのに使う)
     def save_to_history1(self, event=None):
@@ -1987,12 +2026,14 @@ class PromptConstructorMain:
             self.text_box_bottom.insert(tk.END, self.undo_history[-1])
             self.text_box_bottom.event_generate("<<UpdateText>>")
 
+
     def toggle_autosave_json(self):
         global autosave_json_enabled
         autosave_json_enabled = self.autosave_json_var.get()
         config['Settings']['autosave_json'] = 'enable' if autosave_json_enabled else 'disable'
         with open(settings_path, 'w') as configfile:
             config.write(configfile)
+
 
     def save_prompt_and_close(self):
         import datetime

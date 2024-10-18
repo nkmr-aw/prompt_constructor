@@ -16,7 +16,12 @@ def sanitize_input(value, data_type):
         except ValueError:
             return None
     elif data_type == 'bool':
-        return value.lower() in ['true', '1', 't', 'y', 'yes']
+        if value.lower() == 'enable':
+            return True
+        elif value.lower() == 'disable':
+            return False
+        else:
+            return None
     else:
         return value
 
