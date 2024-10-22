@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.25.1"
+version = "1.0.26"
 
 
 # 言語設定の読み込み
@@ -860,41 +860,11 @@ class PromptConstructorMain:
             item_text = tree.item(selected_item[0], "text")
             parent_item = tree.parent(selected_item[0])
             if parent_item:
-                # 子アイテムが選択された場合
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
                 self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
-
-                # 前回選択したアイテムと同じなら下部テキストボックスに追加
-                if self.last_selected_child == selected_item[0]:
-                    # コメント行("#"で始まる行)を除外
-                    text_lines = item_text.split("\n")
-                    filtered_lines = [line for line in text_lines if not line.startswith("#")]
-
-                    # 行の途中から始まるコメントを改行部分まで除外
-                    filtered_lines2 = ""
-                    for line in filtered_lines:
-                        if "#" in line:
-                            _index = line.find('#')
-                            if _index != -1:
-                                line = line[:_index].strip()
-                        filtered_lines2 += line + '\n'
-
-                    # 末尾の余計な改行を削除
-                    filtered_lines2 = filtered_lines2.rstrip('\n')
-                    # 末尾に", "を追加
-                    filtered_lines2 = filtered_lines2.rstrip(',') + ", "
-
-                    cursor_position = self.text_box_bottom.index(tk.INSERT)
-                    if cursor_position:
-                        self.text_box_bottom.insert(cursor_position, filtered_lines2)
-                    else:
-                        self.text_box_bottom.insert(tk.END, filtered_lines2)
-                    self.text_box_bottom.focus()  # アイテム追加後、プロンプト欄にフォーカス
-                    self.save_to_history2()
-                else:
-                    self.last_selected_child = selected_item[0]
-                    self.last_selected_parent = parent_item
+                self.last_selected_parent = selected_item[0]
+                self.last_selected_child = parent_item
             else:
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
@@ -984,27 +954,89 @@ class PromptConstructorMain:
 
             if dx > 16 or dy > 16:
                 tree = self.drag_data["tree"]
-                target_item = tree.identify_row(y)
-                if target_item and target_item != self.drag_start_item:  # ドラッグ開始アイテムと異なる場合のみ移動
-                    source_parent = tree.parent(self.drag_start_item)
-                    target_parent = tree.parent(target_item)
+                if tree != None:
+                    target_item = tree.identify_row(y)
+                    if target_item and target_item != self.drag_start_item:  # ドラッグ開始アイテムと異なる場合のみ移動
+                        source_parent = tree.parent(self.drag_start_item)
+                        target_parent = tree.parent(target_item)
 
-                    # 子アイテムを持たない親アイテムの上に移動された場合
-                    if target_parent == "" and not tree.get_children(target_item):
-                        tree.move(self.drag_start_item, target_item, "end")  # 親アイテムの配下に移動
-                        tree.item(target_item, open=True)  # 親アイテムを展開 
-                    elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
-                        tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
+                        # 子アイテムを持たない親アイテムの上に移動された場合
+                        if target_parent == "" and not tree.get_children(target_item):
+                            tree.move(self.drag_start_item, target_item, "end")  # 親アイテムの配下に移動
+                            tree.item(target_item, open=True)  # 親アイテムを展開
+                        elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
+                            tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
 
 
     def on_tree_item_release(self, event):
-        self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
-        self.is_dragging = False  # ドラッグ終了時に is_dragging を False に設定
-        if autosave_json_enabled:
-            self.save_dicts_to_json()
+        # ドラッグ終了時のイベント処理
+        if "item" in self.drag_data and self.drag_data["item"]:
+            # ドラッグ移動の有無を判定
+            if abs(event.x - self.drag_data["x"]) < 16 and abs(event.y - self.drag_data["y"]) < 16:
+                # ドラッグ移動をしていない場合、アイテムを追加
+                self.add_item_to_prompt(event)
+
+                if autosave_json_enabled:
+                    self.save_dicts_to_json()
+
+            # ドラッグ終了後、変数をリセット
+            self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
+            self.is_dragging = False  # ドラッグ終了時に is_dragging を False に設定
+
+
+    def add_item_to_prompt(self, event):
+        tree = event.widget
+        selected_item = tree.selection()
+        if selected_item:
+            item_text = tree.item(selected_item[0], "text")
+            parent_item = tree.parent(selected_item[0])
+            if parent_item:
+                # 子アイテムが選択された場合
+                self.text_box_top.delete(1.0, tk.END)
+                self.text_box_top.insert(tk.END, item_text)
+                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
+
+                # 前回選択したアイテムと同じなら下部テキストボックスに追加
+                if self.last_selected_child == selected_item[0]:
+                    # コメント行("#"で始まる行)を除外
+                    text_lines = item_text.split("\n")
+                    filtered_lines = [line for line in text_lines if not line.startswith("#")]
+
+                    # 行の途中から始まるコメントを改行部分まで除外
+                    filtered_lines2 = ""
+                    for line in filtered_lines:
+                        if "#" in line:
+                            _index = line.find('#')
+                            if _index != -1:
+                                line = line[:_index].strip()
+                        filtered_lines2 += line + '\n'
+
+                    # 末尾の余計な改行を削除
+                    filtered_lines2 = filtered_lines2.rstrip('\n')
+                    # 末尾に", "を追加
+                    filtered_lines2 = filtered_lines2.rstrip(',') + ", "
+
+                    cursor_position = self.text_box_bottom.index(tk.INSERT)
+                    if cursor_position:
+                        self.text_box_bottom.insert(cursor_position, filtered_lines2)
+                    else:
+                        self.text_box_bottom.insert(tk.END, filtered_lines2)
+                    self.text_box_bottom.focus()  # アイテム追加後、プロンプト欄にフォーカス
+                    self.save_to_history2()
+                else:
+                    self.last_selected_child = selected_item[0]
+                    self.last_selected_parent = parent_item
+            else:
+                self.text_box_top.delete(1.0, tk.END)
+                self.text_box_top.insert(tk.END, item_text)
+                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
+                self.last_selected_parent = selected_item[0]
+                self.last_selected_child = None
+            # ハイライト処理
+            self.update_highlight()
 
 
     # 右クリックメニュー
