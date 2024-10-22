@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.25"
+version = "1.0.25.1"
 
 
 # 言語設定の読み込み
@@ -412,26 +412,14 @@ class PromptConstructorMain:
         self.last_selected_parent = None
         self.last_selected_child = None
 
-        # ツリービューの選択イベントをバインド
-        self.tree1.bind("<<TreeviewSelect>>", self.on_tree_select)
-        self.tree2.bind("<<TreeviewSelect>>", self.on_tree_select)
-        self.tree3.bind("<<TreeviewSelect>>", self.on_tree_select)
 
-        # ドラッグ＆ドロップのバインド
-        self.tree1.bind("<ButtonPress-1>", self.on_tree_item_press)
-        self.tree1.bind("<ButtonPress-3>", self.on_tree_item_press2)
-        self.tree1.bind("<B1-Motion>", self.on_tree_item_motion)
-        self.tree1.bind("<ButtonRelease-1>", self.on_tree_item_release)
-        
-        self.tree2.bind("<ButtonPress-1>", self.on_tree_item_press)
-        self.tree2.bind("<ButtonPress-3>", self.on_tree_item_press2)
-        self.tree2.bind("<B1-Motion>", self.on_tree_item_motion)
-        self.tree2.bind("<ButtonRelease-1>", self.on_tree_item_release)
-        
-        self.tree3.bind("<ButtonPress-1>", self.on_tree_item_press)
-        self.tree3.bind("<ButtonPress-3>", self.on_tree_item_press2)
-        self.tree3.bind("<B1-Motion>", self.on_tree_item_motion)
-        self.tree3.bind("<ButtonRelease-1>", self.on_tree_item_release)
+        # ツリービューのイベントをバインド
+        for tree in [self.tree1, self.tree2, self.tree3]:
+            tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+            tree.bind("<ButtonPress-1>", self.on_tree_item_press)
+            tree.bind("<ButtonPress-3>", self.on_tree_item_press2)
+            tree.bind("<B1-Motion>", self.on_tree_item_motion)
+            tree.bind("<ButtonRelease-1>", self.on_tree_item_release)
 
         # ドラッグデータの初期化
         self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
@@ -536,21 +524,14 @@ class PromptConstructorMain:
 
 
         # マウスホイールイベントのバインド
-        self.tree1.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
-        self.tree1.bind("<MouseWheel>", self.scroll_leftpane)
-        self.tree1.bind("<Button-2>", self.on_mouseclick_leftpane)
-        self.tree2.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
-        self.tree2.bind("<MouseWheel>", self.scroll_leftpane)
-        self.tree2.bind("<Button-2>", self.on_mouseclick_leftpane)
-        self.tree3.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
-        self.tree3.bind("<MouseWheel>", self.scroll_leftpane)
-        self.tree3.bind("<Button-2>", self.on_mouseclick_leftpane)
-        self.text_box_top.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
-        self.text_box_top.bind("<Button-2>", self.on_mouseclick_rightpane)
-        self.text_box_bottom.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
-        self.text_box_bottom.bind("<Button-2>", self.on_mouseclick_rightpane)
-        self.text_box_search.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
-        self.text_box_search.bind("<Button-2>", self.on_mouseclick_rightpane)
+        for tree in [self.tree1, self.tree2, self.tree3]:
+            tree.bind("<Shift-MouseWheel>", self.on_mousewheel_leftpane)
+            tree.bind("<MouseWheel>", self.scroll_leftpane)
+            tree.bind("<Button-2>", self.on_mouseclick_leftpane)
+        for text_box in [self.text_box_top, self.text_box_bottom, self.text_box_search]:
+            text_box.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
+            text_box.bind("<Button-2>", self.on_mouseclick_rightpane)
+
         # フォントサイズ変更関連変数 初期化
         self.fontsize_treeview_current = fontsize_treeview
         rowheight_treeview = self.fontsize_treeview_current + 10
