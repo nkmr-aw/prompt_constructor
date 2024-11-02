@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.26"
+version = "1.0.27"
 
 
 # 言語設定の読み込み
@@ -442,12 +442,16 @@ class PromptConstructorMain:
         # 「コピー2」ボタン(ツリービューの選択アイテムのテキストをコピーする)
         self.copy2_button = tk.Button(self.button_vertical_frame2, text=messages[lang]['button_copy'], width=self.button_width1, command=self.on_copy2_button_click)
         self.copy2_button.pack(side=tk.TOP, pady=(5, 0))
-        
+
         # 上部テキストボックス(アイテム欄)
-        self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines)
+        self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines, wrap=tk.NONE)
+        # 先にスクロールバーを初期化して先に配置してしまう
+        self.text_box_top_scrollbar = ttk.Scrollbar(self.right_frame_top, orient="vertical", command=self.text_box_top.yview)
+        self.text_box_top_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.text_box_top.configure(yscrollcommand=self.text_box_top_scrollbar.set)
+        # スクロールバーの後、上部テキストボックスをpack
         self.text_box_top.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_top.config(font=(textfont, fontsize_textbox), takefocus=0)
-
 
         # 右ペインの下部フレーム (テキストボックスと「クリア」ボタン等)
         self.right_frame_bottom = tk.Frame(self.right_frame)
@@ -488,6 +492,11 @@ class PromptConstructorMain:
 
         # 下部テキストボックス(プロンプト欄)
         self.text_box_bottom = tk.Text(self.right_frame_bottom, height=10)
+        # 先にスクロールバーを初期化して先に配置してしまう
+        self.text_box_bottom_scrollbar = ttk.Scrollbar(self.right_frame_bottom, orient="vertical", command=self.text_box_bottom.yview)
+        self.text_box_bottom_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.text_box_bottom.configure(yscrollcommand=self.text_box_bottom_scrollbar.set)
+        # スクロールバーの後、上部テキストボックスをpack
         self.text_box_bottom.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.text_box_bottom.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_bottom.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
@@ -584,6 +593,9 @@ class PromptConstructorMain:
         self.root.bind("<KeyPress-Shift_R>", self.on_shift_press)
         self.root.bind("<KeyRelease-Shift_R>", self.on_shift_release)
 
+        # Ctrl+F監視
+        self.root.bind("<Control-f>", self.focus_search_box)
+
         # 過去に自動保存されたtmpファイルを読み込む(text_box_bottomが配置された後でないと動作しないので注意)
         self.load_latest_prompt_file()
 
@@ -676,6 +688,14 @@ class PromptConstructorMain:
 
     def on_shift_release(self, event):
         self.is_shift_pressed = False
+
+
+    def focus_search_box(self, event=None):
+        # Ctrl+Fを押したときにtext_box_searchにフォーカスを移し、
+        # text_box_search内のテキストを全範囲選択
+        self.text_box_search.focus_set()  # text_box_searchにフォーカス
+        self.text_box_search.select_range(0, tk.END)  # テキストを全範囲選択
+        return "break"  # イベントの伝播を停止
 
 
     def expand_selection(self, target_text):
