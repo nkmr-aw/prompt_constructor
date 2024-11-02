@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.28"
+version = "1.0.29"
 
 
 # 言語設定の読み込み
@@ -1728,7 +1728,7 @@ class PromptConstructorMain:
             widget.tag_config("selected_highlight", background="red", foreground="white")
 
         # イベント処理後に更新を確実に行うため、afterメソッドを使用
-        self.after_id = self.root.after(10, self.delayed_highlight_update)
+        self.after_id = self.root.after(1, self.delayed_highlight_update)
 
 
     def delayed_highlight_update(self):
