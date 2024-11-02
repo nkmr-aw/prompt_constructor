@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.27"
+version = "1.0.28"
 
 
 # 言語設定の読み込み
@@ -2114,9 +2114,12 @@ class PromptConstructorMain:
         if not autosave_json_enabled:
             result = messagebox.askokcancel(messages[lang]['title_exit_confirm'], messages[lang]['message_autosave_disabled_confirm'])
             if result:
-                # 空でもtmpファイル作る
+                # プロンプト欄が空でもtmpファイル作る
                 self.save_prompt_and_close()
-                os.remove(lock_file_path)  # ロックファイルを削除
+
+                if os.path.exists(lock_file_path):
+                    os.remove(lock_file_path)  # ロックファイルを削除
+
                 self.root.destroy()
             else:
                 return
