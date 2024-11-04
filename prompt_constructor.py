@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.29"
+version = "1.0.30"
 
 
 # 言語設定の読み込み
@@ -1672,6 +1672,9 @@ class PromptConstructorMain:
             if input_text == self.text_box_search.placeholder:
                 input_text = ""
 
+            if not input_text:
+                continue
+
             # すべてのタグを削除
             widget.tag_remove("highlight", "1.0", tk.END)
             widget.tag_remove("selected", "1.0", tk.END)
@@ -1730,6 +1733,12 @@ class PromptConstructorMain:
         # イベント処理後に更新を確実に行うため、afterメソッドを使用
         self.after_id = self.root.after(1, self.delayed_highlight_update)
 
+        # Enterキーが押された場合のみ、検索一致部分を範囲選択
+        if event is not None and event.keysym == "Return":
+            search_text = self.text_box_search.get()
+            if search_text:
+                self.select_search_match(search_text)
+
 
     def delayed_highlight_update(self):
         # after_idをクリア
@@ -1747,6 +1756,26 @@ class PromptConstructorMain:
         # if content != entry.placeholder:
         #     print(f"検索内容: {content}")
         pass
+
+
+    def select_search_match(self, search_text):
+        # text_box_bottom内のテキストを取得
+        text_content = self.text_box_bottom.get("1.0", tk.END)
+
+        # 検索文字列の開始位置を取得
+        start_index = text_content.find(search_text)
+
+        # 検索文字列が見つかった場合
+        if start_index != -1:
+            # 検索文字列の終了位置を計算
+            end_index = start_index + len(search_text)
+
+            # 検索文字列を範囲選択
+            self.text_box_bottom.tag_remove(tk.SEL, "1.0", tk.END)
+            self.text_box_bottom.tag_add(tk.SEL, f"1.0+{start_index}c", f"1.0+{end_index}c")
+
+            # 範囲選択部分が見えるようにスクロール
+            self.text_box_bottom.see(f"1.0+{start_index}c")
 
 
     def ensure_prompt_files_exist(self):
