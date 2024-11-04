@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.30"
+version = "1.0.31"
 
 
 # 言語設定の読み込み
@@ -1651,7 +1651,7 @@ class PromptConstructorMain:
             self.text_box_bottom.delete(1.0, tk.END)
 
 
-    def update_highlight(self, event=None):
+    def update_highlight(self, event=None, runner=0):
         # イベントが発生したウィジェットを特定
         if event and event.widget in [self.text_box_top, self.text_box_bottom]:
             current_widget = event.widget
@@ -1672,8 +1672,8 @@ class PromptConstructorMain:
             if input_text == self.text_box_search.placeholder:
                 input_text = ""
 
-            if not input_text:
-                continue
+            if not input_text:  # 検索文字列がない場合は処理を終了
+                return
 
             # すべてのタグを削除
             widget.tag_remove("highlight", "1.0", tk.END)
@@ -1731,7 +1731,8 @@ class PromptConstructorMain:
             widget.tag_config("selected_highlight", background="red", foreground="white")
 
         # イベント処理後に更新を確実に行うため、afterメソッドを使用
-        self.after_id = self.root.after(1, self.delayed_highlight_update)
+        if runner <= 0:
+            self.after_id = self.root.after(1, self.delayed_update_highlight, runner)
 
         # Enterキーが押された場合のみ、検索一致部分を範囲選択
         if event is not None and event.keysym == "Return":
@@ -1740,14 +1741,14 @@ class PromptConstructorMain:
                 self.select_search_match(search_text)
 
 
-    def delayed_highlight_update(self):
+    def delayed_update_highlight(self, runner):
         # after_idをクリア
         if hasattr(self, 'after_id'):
             self.root.after_cancel(self.after_id)
             del self.after_id
 
         # 両方のテキストボックスに対して強制的に更新を行う
-        self.update_highlight()
+        self.update_highlight(None, runner+1)
 
 
     def on_entry_change(*args):
