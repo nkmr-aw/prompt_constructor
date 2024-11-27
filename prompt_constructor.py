@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.31"
+version = "1.0.32"
 
 
 # 言語設定の読み込み
@@ -444,7 +444,7 @@ class PromptConstructorMain:
         self.copy2_button.pack(side=tk.TOP, pady=(5, 0))
 
         # 上部テキストボックス(アイテム欄)
-        self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines, wrap=tk.NONE)
+        self.text_box_top = tk.Text(self.right_frame_top, height=itemarea_displines)
         # 先にスクロールバーを初期化して先に配置してしまう
         self.text_box_top_scrollbar = ttk.Scrollbar(self.right_frame_top, orient="vertical", command=self.text_box_top.yview)
         self.text_box_top_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
