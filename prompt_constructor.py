@@ -13,7 +13,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.32"
+version = "1.0.33"
 
 
 # 言語設定の読み込み
@@ -1660,20 +1660,36 @@ class PromptConstructorMain:
 
         text_widgets = [self.text_box_top, self.text_box_bottom]
 
+        # Entryウィジェットから検索テキストを取得
+        input_text = self.text_box_search.get()
+
+        # プレースホルダーテキストの場合は空文字列として扱う
+        if input_text == self.text_box_search.placeholder:
+            input_text = ""
+        
+        # 入力が空文字列の場合はハイライトをクリアして終了
+        if not input_text:
+            for widget in text_widgets:
+                widget.tag_remove("highlight", "1.0", tk.END)
+                widget.tag_remove("selected", "1.0", tk.END)
+                widget.tag_remove("selected_highlight", "1.0", tk.END)
+            return
+            
+        # スペースのみの場合はそのまま使用、それ以外は前後の空白を削除
+        if not input_text.isspace():
+            input_text = input_text.strip()
+            # 前後の空白を削除した結果、空文字列になった場合はハイライトをクリア
+            if not input_text:
+                for widget in text_widgets:
+                    widget.tag_remove("highlight", "1.0", tk.END)
+                    widget.tag_remove("selected", "1.0", tk.END)
+                    widget.tag_remove("selected_highlight", "1.0", tk.END)
+                return
+
         for widget in text_widgets:
             # 現在のウィジェットが指定されている場合は、そのウィジェットのみ更新
             if current_widget and widget != current_widget:
                 continue
-
-            # Entryウィジェットから検索テキストを取得
-            input_text = self.text_box_search.get().strip()
-
-            # プレースホルダーテキストの場合は空文字列として扱う
-            if input_text == self.text_box_search.placeholder:
-                input_text = ""
-
-            if not input_text:  # 検索文字列がない場合は処理を終了
-                return
 
             # すべてのタグを削除
             widget.tag_remove("highlight", "1.0", tk.END)
