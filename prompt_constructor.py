@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import ctypes
 import configparser
 import re
 import json
@@ -13,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.33"
+version = "1.0.34"
 
 
 # 言語設定の読み込み
@@ -277,9 +278,6 @@ fontsize_min = 8
 fontsize_max = 32
 rowheight_treeview = 1  # 後で更新
 
-# アプリケーションの開始時にロックファイルを作成
-lock_file_path = 'app.lock'
-
 
 class PromptConstructorMain:
     def __init__(self):
@@ -293,11 +291,11 @@ class PromptConstructorMain:
             exit(1)
 
         if multiple_boot == 'disable':
-            if os.path.exists(lock_file_path):
+            # Mutexによる重複起動チェック
+            self.mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PromptConstructor_Mutex")
+            if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
                 messagebox.showerror(messages[lang]['title_error'], messages[lang]['message_multipleboot_error'])
                 sys.exit(1)
-            else:
-                open(lock_file_path, 'w').close()  # ロックファイルを作成
 
 
         root = tk.Tk()
@@ -2163,9 +2161,6 @@ class PromptConstructorMain:
                 # プロンプト欄が空でもtmpファイル作る
                 self.save_prompt_and_close()
 
-                if os.path.exists(lock_file_path):
-                    os.remove(lock_file_path)  # ロックファイルを削除
-
                 self.root.destroy()
             else:
                 return
@@ -2175,7 +2170,6 @@ class PromptConstructorMain:
 
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
-            os.remove(lock_file_path)  # ロックファイルを削除
             self.root.destroy()
 
 
@@ -2209,4 +2203,3 @@ class EntryWithPlaceholder(tk.Entry):
 
 if __name__ == "__main__":
     PromptConstructorMain()
-
