@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.34"
+version = "1.0.35"
 
 
 # 言語設定の読み込み
@@ -564,6 +564,17 @@ class PromptConstructorMain:
         self.autosave_json_var = tk.BooleanVar(value=autosave_json_enabled)
         self.autosave_json_checkbox = tk.Checkbutton(self.json_options_frame, text=messages[lang]['check_autosave_json'], variable=self.autosave_json_var, command=self.toggle_autosave_json)
         self.autosave_json_checkbox.pack(side=tk.RIGHT,  padx=(20, 0))
+
+        # 左ペイン検索欄
+        self.entry_search_left = EntryWithPlaceholder(self.left_frame, placeholder=messages[lang]['label_search'], color='gray')
+        self.entry_search_left.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
+        self.entry_search_left.config(font=(textfont, fontsize_textbox), takefocus=0)  # フォントサイズを設定
+        self.entry_search_left.bind('<KeyRelease>', self.update_highlight_left)
+        self.entry_search_left.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane) # 文字サイズ変更用
+        self.entry_search_left.bind("<Button-2>", self.on_mouseclick_rightpane) # 文字サイズリセット用
+        self.entry_search_left.bind("<Return>", self.on_search_left_enter) # Enterキーで最初の候補へジャンプ
+
+        # 前回選択したアイテムを記録する変数
 
         # 前回選択したアイテムを記録する変数
         self.last_selected_parent = None
@@ -1921,6 +1932,97 @@ class PromptConstructorMain:
             messagebox.showerror(messages[lang]['title_save_json_error'], messages[lang]['message_save_json_notcomplete'] + str(e))
 
 
+    def update_highlight_left(self, event=None):
+        if not hasattr(self, 'entry_search_left'):
+            return
+
+        search_text = self.entry_search_left.get()
+        if search_text == self.entry_search_left.placeholder:
+            search_text = ""
+        
+        # 現在のタブに対応するツリーを取得
+        current_tab = self.tab_control.index(self.tab_control.select())
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            return
+
+        # タグの設定(赤っぽい色)
+        tree.tag_configure("hit", background="#ffcccc", foreground="black") # 薄い赤
+        tree.tag_configure("hit_dark", background="#ff8888", foreground="black") # 少し濃い赤
+
+        # 検索テキストがない場合はリセット
+        if not search_text:
+            for item in tree.get_children():
+                tree.item(item, tags=())
+                for child in tree.get_children(item):
+                    tree.item(child, tags=())
+            return
+
+        search_text_lower = search_text.lower()
+
+        for parent in tree.get_children():
+            hit_children_count = 0
+            
+            # 子アイテムのチェック
+            for child in tree.get_children(parent):
+                child_text = tree.item(child, "text")
+                if search_text_lower in child_text.lower():
+                    tree.item(child, tags=("hit",))
+                    hit_children_count += 1
+                else:
+                    tree.item(child, tags=())
+            
+            # 親アイテムのハイライト設定
+            if hit_children_count >= 2:
+                tree.item(parent, tags=("hit_dark",))
+                tree.item(parent, open=True) # ヒットしたら展開する
+            elif hit_children_count == 1:
+                tree.item(parent, tags=("hit",))
+                tree.item(parent, open=True) # ヒットしたら展開する
+            else:
+                tree.item(parent, tags=())
+
+
+    def on_search_left_enter(self, event=None):
+        # 検索欄でEnterキーが押されたときの処理
+        # 左ペインのツリーで、ハイライトされている最初のアイテムにジャンプする
+
+        # 現在のタブに対応するツリーを取得
+        current_tab = self.tab_control.index(self.tab_control.select())
+        if current_tab == 0:
+            tree = self.tree1
+        elif current_tab == 1:
+            tree = self.tree2
+        elif current_tab == 2:
+            tree = self.tree3
+        else:
+            return
+
+        # ツリーのルートから順に探索
+        for parent in tree.get_children():
+            # 親アイテムがハイライトされているか確認
+            tags = tree.item(parent, "tags")
+            if "hit_dark" in tags or "hit" in tags:
+                tree.see(parent)
+                tree.selection_set(parent)
+                tree.focus(parent)
+                return
+
+            # 子アイテムを探索
+            for child in tree.get_children(parent):
+                tags = tree.item(child, "tags")
+                if "hit" in tags:
+                    tree.see(child)
+                    tree.selection_set(child)
+                    tree.focus(child)
+                    return
+
+
     def on_tab_changed(self, event):
         current_tab = self.tab_control.index(self.tab_control.select())
         if current_tab == 0:
@@ -1961,6 +2063,7 @@ class PromptConstructorMain:
 
         # ハイライト処理
         self.update_highlight()
+        self.update_highlight_left()
 
 
     def scroll_leftpane(self, event):
@@ -2023,6 +2126,8 @@ class PromptConstructorMain:
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+            if hasattr(self, 'entry_search_left'):
+                self.entry_search_left.config(font=(textfont, self.fontsize_textbox_current))
 
         elif not event.delta > 0:
             self.fontsize_textbox_current += 1
@@ -2031,6 +2136,8 @@ class PromptConstructorMain:
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+            if hasattr(self, 'entry_search_left'):
+                self.entry_search_left.config(font=(textfont, self.fontsize_textbox_current))
 
 
     # Shiftは監視していない(できない？)ので、Shift監視は別の処理で実施
@@ -2045,6 +2152,8 @@ class PromptConstructorMain:
             self.text_box_top.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_bottom.config(font=(textfont, self.fontsize_textbox_current))
             self.text_box_search.config(font=(textfont, self.fontsize_textbox_current))
+            if hasattr(self, 'entry_search_left'):
+                self.entry_search_left.config(font=(textfont, self.fontsize_textbox_current))
 
 
     def clamp(self, value, vmin, vmax):
