@@ -9,14 +9,23 @@ It is made with Python+Tkinter, and has only been tested on Windows, so availabl
 
 ### Required for run
 The following must be installed in your environment.
-* Python 3.14.x or later
-* Cerberus 1.3.8 or later
+* Python 3.12 or later
+* [uv](https://github.com/astral-sh/uv) (Recommended) or pip
 
 ### Installation & How to run
-Run 'prompt_constructor_launcher.pyw' after 'git clone' to an appropriate location.  
+Clone the repository to an appropriate location.
+
+#### Using uv (Recommended)
+1. Run `uv sync` in the project directory to set up the environment.
+2. Run `prompt_constructor_launcher.pyw`.
+
+#### Using pip
+1. Run `pip install -r requirements.txt` to install dependencies.
+2. Run `prompt_constructor_launcher.pyw`.
+
 When you run 'prompt_constructor.py', you can start and use the application normally, but get an extra black screen.  
 Running it via 'prompt_constructor_launcher.pyw' will suppress the black screen.
-Note that a black screen does not interfere with the operation of the application. It's just an eyesore. 
+Please note that the black screen is merely an eyesore and does not affect the operation of the app.
 
 There are files and folders that are automatically created when you run the program for the first time. 
 Works entirely locally.  
@@ -49,14 +58,23 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 
 ### 必要なもの
 実行環境に以下のものがインストールされている必要があります。
-* Python 3.14.x以降
-* Cerberus 1.3.8以降
+* Python 3.12以降
+* [uv](https://github.com/astral-sh/uv) (推奨) または pip
 
 ### インストールと実行方法
-適当な場所に'git clone'してから'prompt_constructor_launcher.pyw'を実行します。  
+適当な場所にリポジトリをクローンしてください。
+
+#### uv を使う場合 (推奨)
+1. プロジェクトフォルダで `uv sync` を実行して環境をセットアップします。
+2. `prompt_constructor_launcher.pyw` を実行します。
+
+#### pip を使う場合
+1. `pip install -r requirements.txt` を実行して依存関係をインストールします。
+2. `prompt_constructor_launcher.pyw` を実行します。
+
 'prompt_constructor.py'を実行しても普通に起動してアプリを使用できますが、余計な黒い画面が出てきます。
 'prompt_constructor_launcher.pyw'経由で実行すると黒い画面を抑止することができます。   
-なお、黒い画面が出てもアプリの動作には支障はありません。目障りなだけです。 
+なお、黒い画面が出ても目障りなだけでアプリの動作には支障はありません。 
 
 初回実行時に自動作成されるファイルやフォルダがあります。
 完全にローカルで実行できます。
@@ -78,5 +96,3 @@ PyInstallerやNuitkaを用いてビルドするとマルウェアとして誤検
 
 ビルドしてお使いになる場合もそうでない場合も自己責任でお使いください。  
 よろしくお願いします。  
-
-

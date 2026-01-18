@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.35"
+version = "1.0.36"
 
 
 # 言語設定の読み込み

@@ -29,8 +29,9 @@ resources.rc
 *.ini
 *.json
 
-# Text files (exclude all)
+# Text files (exclude all except requirements.txt)
 *.txt
+!requirements.txt
 
 # Logs
 *.log
