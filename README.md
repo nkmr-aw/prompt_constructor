@@ -9,8 +9,8 @@ It is made with Python+Tkinter, and has only been tested on Windows, so availabl
 
 ### Required for run
 The following must be installed in your environment.
-* Python 3.12.x or later
-* Cerberus 1.3.5 or later (Required for v1.0.22 and later.)
+* Python 3.14.x or later
+* Cerberus 1.3.8 or later
 
 ### Installation & How to run
 Run 'prompt_constructor_launcher.pyw' after 'git clone' to an appropriate location.  
@@ -49,8 +49,8 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 
 ### 必要なもの
 実行環境に以下のものがインストールされている必要があります。
-* Python 3.12.x以降
-* Cerberus 1.3.5以降 (v1.0.22以降で必要。)
+* Python 3.14.x以降
+* Cerberus 1.3.8以降
 
 ### インストールと実行方法
 適当な場所に'git clone'してから'prompt_constructor_launcher.pyw'を実行します。  
