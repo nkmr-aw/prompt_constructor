@@ -1,14 +1,36 @@
-.idea/
-bk/
+# Python internals
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / Packaging
 build/
 dist/
-prompt/
+*.egg-info/
+*.egg
+*.spec
+
+# Virtual Environments
+.venv/
 venv/
+.env
+
+# IDE settings
+.idea/
+.vscode/
+
+# Project specific
+bk/
+prompt/
 resources.res
 resources.rc
+
+# Configuration and Data (User specific)
 *.ini
 *.json
-*.spec
+
+# Text files (exclude all)
 *.txt
-!requirements.txt
-app.lock
+
+# Logs
+*.log
