@@ -9,14 +9,14 @@ It is made with Python+Tkinter, and has only been tested on Windows, so availabl
 
 ### Required for run
 The following must be installed in your environment.
-* Python 3.12 or later
+* Python 3.14 or later
 * [uv](https://github.com/astral-sh/uv) (Recommended) or pip
 
 ### Installation & How to run
 Clone the repository to an appropriate location.
 
 #### Using uv (Recommended)
-1. Run `uv sync` in the project directory to set up the environment.
+1. Run `uv sync --frozen` in the project directory to set up the environment.
 2. Run `prompt_constructor_launcher.pyw`.
 
 #### Using pip
@@ -58,14 +58,14 @@ Python+Tkinterで作られています。Windowsでしか動作確認してい�
 
 ### 必要なもの
 実行環境に以下のものがインストールされている必要があります。
-* Python 3.12以降
+* Python 3.14以降
 * [uv](https://github.com/astral-sh/uv) (推奨) または pip
 
 ### インストールと実行方法
 適当な場所にリポジトリをクローンしてください。
 
 #### uv を使う場合 (推奨)
-1. プロジェクトフォルダで `uv sync` を実行して環境をセットアップします。
+1. プロジェクトフォルダで `uv sync --frozen` を実行して環境をセットアップします。
 2. `prompt_constructor_launcher.pyw` を実行します。
 
 #### pip を使う場合

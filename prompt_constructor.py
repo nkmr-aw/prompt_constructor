@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.36"
+version = "1.0.37"
 
 
 # 言語設定の読み込み
@@ -998,6 +998,7 @@ class PromptConstructorMain:
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
+                self.update_highlight_left()
 
 
     def on_tree_item_release(self, event):
@@ -1156,6 +1157,7 @@ class PromptConstructorMain:
 
                 if autosave_json_enabled:
                     self.save_dicts_to_json()
+                self.update_highlight_left()
                 if messages_enabled:
                     messagebox.showinfo(messages[lang]['title_clone_info'], messages[lang]['message_clone_complete'])
 
@@ -1195,6 +1197,7 @@ class PromptConstructorMain:
                 self.tree3.insert(favorites_parent, "end", text=item_text)
                 if autosave_json_enabled:
                     self.save_dicts_to_json()
+                self.update_highlight_left()
                 if messages_enabled:
                     messagebox.showinfo(messages[lang]['title_fav_info'], item_text + messages[lang]['message_fav_complete'])
             else:
@@ -1229,6 +1232,7 @@ class PromptConstructorMain:
 
         if autosave_json_enabled:
             self.save_dicts_to_json()
+        self.update_highlight_left()
 
 
     # お気に入りタブ選択時はボタンが無効化されるようにしてある(@on_tab_changed)ため、
@@ -1264,6 +1268,7 @@ class PromptConstructorMain:
 
         if autosave_json_enabled:
             self.save_dicts_to_json()
+        self.update_highlight_left()
 
 
     def on_delete_button_click(self):
@@ -1288,6 +1293,7 @@ class PromptConstructorMain:
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
                             self.save_dicts_to_json()
+                        self.update_highlight_left()
                 else:  # 親アイテムが選択されている場合
                     messagebox.showerror(messages[lang]['title_delete_error'], messages[lang]['message_favparent_deletion_error'])
                     return
@@ -1318,6 +1324,7 @@ class PromptConstructorMain:
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
                             self.save_dicts_to_json()
+                        self.update_highlight_left()
                 else:  # 親アイテム選択時
                     children = tree.get_children(selected_item[0])
                     if len(tree.get_children()) == 1:
@@ -1341,6 +1348,7 @@ class PromptConstructorMain:
                             tree.delete(selected_item[0])
                             if autosave_json_enabled:
                                 self.save_dicts_to_json()
+                            self.update_highlight_left()
                     else:
                         # 削除前に前後のアイテムを記憶しておく
                         previous_item = tree.prev(selected_item[0])
@@ -1356,6 +1364,7 @@ class PromptConstructorMain:
                         tree.delete(selected_item[0])
                         if autosave_json_enabled:
                             self.save_dicts_to_json()
+                        self.update_highlight_left()
         else:
             messagebox.showerror(messages[lang]['title_delete_error'], messages[lang]['message_select_item_to_delete'])
             return
@@ -1392,6 +1401,7 @@ class PromptConstructorMain:
         tree.item(selected_item[0], text=new_text)
         if autosave_json_enabled:
             self.save_dicts_to_json()
+        self.update_highlight_left()
         if messages_enabled:
             messagebox.showinfo(messages[lang]['title_update_complete'], messages[lang]['message_item_updated'])
 
@@ -2005,14 +2015,6 @@ class PromptConstructorMain:
 
         # ツリーのルートから順に探索
         for parent in tree.get_children():
-            # 親アイテムがハイライトされているか確認
-            tags = tree.item(parent, "tags")
-            if "hit_dark" in tags or "hit" in tags:
-                tree.see(parent)
-                tree.selection_set(parent)
-                tree.focus(parent)
-                return
-
             # 子アイテムを探索
             for child in tree.get_children(parent):
                 tags = tree.item(child, "tags")
