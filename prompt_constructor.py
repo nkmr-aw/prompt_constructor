@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.37"
+version = "1.0.38"
 
 
 # 言語設定の読み込み
@@ -418,6 +418,10 @@ class PromptConstructorMain:
             tree.bind("<ButtonPress-3>", self.on_tree_item_press2)
             tree.bind("<B1-Motion>", self.on_tree_item_motion)
             tree.bind("<ButtonRelease-1>", self.on_tree_item_release)
+            for key in ["<Prior>", "<Page_Up>"]:
+                tree.bind(key, self.on_tree_pageup)
+            for key in ["<Next>", "<Page_Down>"]:
+                tree.bind(key, self.on_tree_pagedown)
 
         # ドラッグデータの初期化
         self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
@@ -538,6 +542,10 @@ class PromptConstructorMain:
         for text_box in [self.text_box_top, self.text_box_bottom, self.text_box_search]:
             text_box.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane)
             text_box.bind("<Button-2>", self.on_mouseclick_rightpane)
+            for key in ["<Prior>", "<Page_Up>"]:
+                text_box.bind(key, self.on_tree_pageup)
+            for key in ["<Next>", "<Page_Down>"]:
+                text_box.bind(key, self.on_tree_pagedown)
 
         # フォントサイズ変更関連変数 初期化
         self.fontsize_treeview_current = fontsize_treeview
@@ -573,6 +581,10 @@ class PromptConstructorMain:
         self.entry_search_left.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane) # 文字サイズ変更用
         self.entry_search_left.bind("<Button-2>", self.on_mouseclick_rightpane) # 文字サイズリセット用
         self.entry_search_left.bind("<Return>", self.on_search_left_enter) # Enterキーで最初の候補へジャンプ
+        for key in ["<Prior>", "<Page_Up>"]:
+            self.entry_search_left.bind(key, self.on_tree_pageup)
+        for key in ["<Next>", "<Page_Down>"]:
+            self.entry_search_left.bind(key, self.on_tree_pagedown)
 
         # 前回選択したアイテムを記録する変数
 
@@ -891,13 +903,15 @@ class PromptConstructorMain:
             if parent_item:
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
-                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
+                if not getattr(self, 'is_navigating_tree', False):
+                    self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
                 self.last_selected_parent = selected_item[0]
                 self.last_selected_child = parent_item
             else:
                 self.text_box_top.delete(1.0, tk.END)
                 self.text_box_top.insert(tk.END, item_text)
-                self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
+                if not getattr(self, 'is_navigating_tree', False):
+                    self.text_box_top.focus()  # 選択時、アイテム欄にフォーカス
                 self.last_selected_parent = selected_item[0]
                 self.last_selected_child = None
             # ハイライト処理
@@ -1946,30 +1960,28 @@ class PromptConstructorMain:
         if not hasattr(self, 'entry_search_left'):
             return
 
-        search_text = self.entry_search_left.get()
-        if search_text == self.entry_search_left.placeholder:
+        # EntryWithPlaceholderの仕様を考慮してテキスト取得
+        search_text = self.entry_search_left.get().strip()
+        
+        # プレースホルダー表示中の場合は空文字として扱う
+        # EntryWithPlaceholderのFocusInで中身が消えるタイミング等を考慮
+        if search_text == self.entry_search_left.placeholder or not search_text:
             search_text = ""
         
         # 現在のタブに対応するツリーを取得
-        current_tab = self.tab_control.index(self.tab_control.select())
-        if current_tab == 0:
-            tree = self.tree1
-        elif current_tab == 1:
-            tree = self.tree2
-        elif current_tab == 2:
-            tree = self.tree3
-        else:
+        tree = self.get_current_tree()
+        if not tree:
             return
 
         # タグの設定(赤っぽい色)
         tree.tag_configure("hit", background="#ffcccc", foreground="black") # 薄い赤
         tree.tag_configure("hit_dark", background="#ff8888", foreground="black") # 少し濃い赤
 
-        # 検索テキストがない場合はリセット
+        # 検索テキストがない場合はハイライトを全てクリア
         if not search_text:
-            for item in tree.get_children():
-                tree.item(item, tags=())
-                for child in tree.get_children(item):
+            for parent in tree.get_children():
+                tree.item(parent, tags=())
+                for child in tree.get_children(parent):
                     tree.item(child, tags=())
             return
 
@@ -2002,16 +2014,8 @@ class PromptConstructorMain:
         # 検索欄でEnterキーが押されたときの処理
         # 左ペインのツリーで、ハイライトされている最初のアイテムにジャンプする
 
-        # 現在のタブに対応するツリーを取得
-        current_tab = self.tab_control.index(self.tab_control.select())
-        if current_tab == 0:
-            tree = self.tree1
-        elif current_tab == 1:
-            tree = self.tree2
-        elif current_tab == 2:
-            tree = self.tree3
-        else:
-            return
+        tree = self.get_current_tree()
+        if not tree: return
 
         # ツリーのルートから順に探索
         for parent in tree.get_children():
@@ -2019,10 +2023,123 @@ class PromptConstructorMain:
             for child in tree.get_children(parent):
                 tags = tree.item(child, "tags")
                 if "hit" in tags:
-                    tree.see(child)
-                    tree.selection_set(child)
-                    tree.focus(child)
+                    self.set_tree_selection(tree, child)
+                    self.text_box_top.focus() # 編集可能にするためフォーカス
                     return
+
+    def on_tree_pageup(self, event=None):
+        self.is_navigating_tree = True
+        try:
+            tree = self.get_current_tree()
+            if not tree: return "break"
+            
+            selection = tree.selection()
+            if not selection:
+                # 選択がない場合は最後のアイテムへ
+                last_parent = tree.get_children()[-1] if tree.get_children() else None
+                if last_parent:
+                    last_item = self.get_last_visible_item(tree, last_parent)
+                    self.set_tree_selection(tree, last_item)
+            else:
+                current_item = selection[0]
+                prev_item = self.get_prev_item(tree, current_item)
+                if prev_item:
+                    self.set_tree_selection(tree, prev_item)
+            
+            # アイテム欄にフォーカスして編集可能にする
+            self.text_box_top.focus()
+
+        finally:
+            # 50ms後にフラグを下ろす(即座にマウス選択等の通常挙動に戻す)
+            self.root.after(50, lambda: setattr(self, 'is_navigating_tree', False))
+        
+        return "break"
+
+    def on_tree_pagedown(self, event=None):
+        self.is_navigating_tree = True
+        try:
+            tree = self.get_current_tree()
+            if not tree: return "break"
+            
+            selection = tree.selection()
+            if not selection:
+                # 選択がない場合は最初のアイテムへ
+                first_items = tree.get_children()
+                if first_items:
+                    self.set_tree_selection(tree, first_items[0])
+            else:
+                current_item = selection[0]
+                next_item = self.get_next_item(tree, current_item)
+                if next_item:
+                    self.set_tree_selection(tree, next_item)
+
+            # アイテム欄にフォーカスして編集可能にする
+            self.text_box_top.focus()
+
+        finally:
+            # 50ms後にフラグを下ろす
+            self.root.after(50, lambda: setattr(self, 'is_navigating_tree', False))
+
+        return "break"
+
+    def get_current_tree(self):
+        current_tab = self.tab_control.index(self.tab_control.select())
+        if current_tab == 0: return self.tree1
+        if current_tab == 1: return self.tree2
+        if current_tab == 2: return self.tree3
+        return None
+
+    def set_tree_selection(self, tree, item):
+        parent = tree.parent(item)
+        if parent:
+            tree.item(parent, open=True)
+        tree.see(item)
+        tree.selection_set(item)
+        tree.focus(item)
+
+    def get_next_item(self, tree, item):
+        # 1. 子がある場合は最初の子へ(自動展開)
+        children = tree.get_children(item)
+        if children:
+            tree.item(item, open=True)
+            return children[0]
+        
+        # 2. 次の兄弟がある場合はそれへ
+        next_sibling = tree.next(item)
+        if next_sibling:
+            return next_sibling
+        
+        # 3. 親の次の兄弟を順に辿る
+        parent = tree.parent(item)
+        while parent:
+            next_parent_sibling = tree.next(parent)
+            if next_parent_sibling:
+                return next_parent_sibling
+            parent = tree.parent(parent)
+            
+        return None
+
+    def get_prev_item(self, tree, item):
+        # 1. 前の兄弟がある場合は、その配下の最後の可視アイテムへ
+        prev_sibling = tree.prev(item)
+        if prev_sibling:
+            return self.get_last_visible_item(tree, prev_sibling)
+        
+        # 2. 前の兄弟がない場合は親へ
+        parent = tree.parent(item)
+        if parent:
+            return parent
+            
+        return None
+
+    def get_last_visible_item(self, tree, item):
+        """指定したアイテム配下で、展開されている場合の最後の末尾アイテムを取得"""
+        children = tree.get_children(item)
+        if children:
+            # PageUp/Downでの移動時は自動展開するので、常に最後の子をチェック
+            tree.item(item, open=True)
+            return self.get_last_visible_item(tree, children[-1])
+        return item
 
 
     def on_tab_changed(self, event):

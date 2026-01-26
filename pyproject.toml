@@ -1,6 +1,6 @@
 [project]
 name = "prompt-constructor"
-version = "1.0.37"
+version = "1.0.38"
 description = "Add your description here"
 requires-python = ">=3.14"
 dependencies = [
