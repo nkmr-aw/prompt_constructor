@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.38"
+version = "1.0.39"
 
 
 # 言語設定の読み込み
@@ -959,15 +959,35 @@ class PromptConstructorMain:
     # ツリーアイテムを左クリックで選択したときの動作
     def on_tree_item_press(self, event):
         tree = event.widget
-        self.drag_data = {"x": event.x, "y": event.y, "item": tree.identify_row(event.y), "tree": tree}
+        item = tree.identify_row(event.y)
+        self.drag_data = {"x": event.x, "y": event.y, "item": item, "tree": tree}
         self.is_dragging = True  # ドラッグ開始時に is_dragging を True に設定
         # ドラッグ開始時にアイテムを記録
-        self.drag_start_item = self.drag_data["item"]
+        self.drag_start_item = item
+        self.last_target_item = None # ドラッグ移動先のデバウンス用
+        
+        # 複数選択対応: 選択中のアイテムの中に、今回クリックしたアイテムが含まれているか確認
+        selected_items = tree.selection()
+        
+        if item in selected_items:
+            # 既に選択されているアイテムをクリックした場合、選択解除を防ぐ
+            self.drag_items = selected_items
+            # ShiftやCtrlが押されていない場合は、標準の選択動作（他を解除してこれだけにする）を抑制
+            if not (event.state & 0x0001 or event.state & 0x0004): # 0x0001: Shift, 0x0004: Control
+                tree.focus(item)
+                return "break"
+        else:
+            self.drag_items = (item,) if item else ()
 
         # お気に入りタブの親アイテムの場合、ドラッグを禁止
-        if tree == self.tree3 and not tree.parent(self.drag_start_item):
-            self.is_dragging = False  # ドラッグを禁止
-            self.drag_data = {}  # ドラッグデータをクリア
+        if tree == self.tree3:
+            # ドラッグアイテムの中に親が含まれている場合、ドラッグを禁止
+            for d_item in self.drag_items:
+                if not tree.parent(d_item):
+                    self.is_dragging = False
+                    self.drag_data = {}
+                    self.drag_items = ()
+                    break
 
 
     # ツリーアイテムを右クリックで選択したときの動作
@@ -999,16 +1019,34 @@ class PromptConstructorMain:
                 tree = self.drag_data["tree"]
                 if tree != None:
                     target_item = tree.identify_row(y)
-                    if target_item and target_item != self.drag_start_item:  # ドラッグ開始アイテムと異なる場合のみ移動
-                        source_parent = tree.parent(self.drag_start_item)
-                        target_parent = tree.parent(target_item)
+                    # 前回と同じターゲットならスキップ (デバウンス)
+                    if target_item == self.last_target_item:
+                        return
 
-                        # 子アイテムを持たない親アイテムの上に移動された場合
-                        if target_parent == "" and not tree.get_children(target_item):
-                            tree.move(self.drag_start_item, target_item, "end")  # 親アイテムの配下に移動
-                            tree.item(target_item, open=True)  # 親アイテムを展開
-                        elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
-                            tree.move(self.drag_start_item, tree.parent(target_item), tree.index(target_item))
+                    # ドラッグアイテム一覧に含まれないアイテムの上に移動された場合のみ処理
+                    if target_item and target_item not in self.drag_items:
+                        target_parent = tree.parent(target_item)
+                        target_index = tree.index(target_item)
+                        
+                        # 空の親アイテムの上に移動されたかどうかの判定をループの外で行う
+                        is_moving_to_empty_parent = (target_parent == "" and not tree.get_children(target_item))
+
+                        # 相対順序を維持し、かつ「間にアイテムが挟まる」のを防ぐため、
+                        # 現在のツリー上の順位でソートし、逆順(下から)にターゲットと同じ位置へ投入する。
+                        sorted_drag_items = sorted(self.drag_items, key=lambda x: tree.index(x))
+                        
+                        for d_item in reversed(sorted_drag_items):
+                            source_parent = tree.parent(d_item)
+                            
+                            if is_moving_to_empty_parent:
+                                # 空の親アイテムの配下に移動（ループ内で判定が変わらないよう固定）
+                                tree.move(d_item, target_item, "end")
+                                tree.item(target_item, open=True)
+                            elif (source_parent == "" and target_parent == "") or (source_parent != "" and target_parent != ""):
+                                # 既存アイテムの兄弟位置へ挿入（同一階層のみを許可する既存制約）
+                                tree.move(d_item, target_parent, target_index)
+                        
+                        self.last_target_item = target_item
 
                 self.drag_data["x"] = x
                 self.drag_data["y"] = y
@@ -1028,7 +1066,9 @@ class PromptConstructorMain:
 
             # ドラッグ終了後、変数をリセット
             self.drag_data = {"x": 0, "y": 0, "item": None, "tree": None}
-            self.is_dragging = False  # ドラッグ終了時に is_dragging を False に設定
+            self.drag_items = ()
+            self.last_target_item = None
+            self.is_dragging = False  # ドラッグ終了時に is_dragging を True に設定
 
 
     def add_item_to_prompt(self, event):
@@ -2013,6 +2053,10 @@ class PromptConstructorMain:
     def on_search_left_enter(self, event=None):
         # 検索欄でEnterキーが押されたときの処理
         # 左ペインのツリーで、ハイライトされている最初のアイテムにジャンプする
+        
+        # Enterキー以外(ドラッグ中など)での誤動作防止
+        if event is not None and event.keysym != "Return":
+            return
 
         tree = self.get_current_tree()
         if not tree: return
