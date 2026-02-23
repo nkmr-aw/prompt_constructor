@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.40"
+version = "1.0.41"
 
 
 # 言語設定の読み込み
@@ -575,13 +575,22 @@ class PromptConstructorMain:
         self.autosave_json_checkbox.pack(side=tk.RIGHT,  padx=(20, 0))
 
         # 左ペイン検索欄
-        self.entry_search_left = EntryWithPlaceholder(self.left_frame, placeholder=messages[lang]['label_search'], color='gray')
-        self.entry_search_left.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
-        self.entry_search_left.config(font=(textfont, fontsize_textbox), takefocus=0)  # フォントサイズを設定
+        self.search_left_frame = tk.Frame(self.left_frame)
+        self.search_left_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
+
+        # 検索ナビゲーションボタン (先に右側に配置することで幅を維持させる)
+        self.button_search_down = tk.Button(self.search_left_frame, text="↓", width=3, command=lambda: self.on_search_left_nav("down"))
+        self.button_search_down.pack(side=tk.RIGHT, padx=(2, 0))
+        self.button_search_up = tk.Button(self.search_left_frame, text="↑", width=3, command=lambda: self.on_search_left_nav("up"))
+        self.button_search_up.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.entry_search_left = EntryWithPlaceholder(self.search_left_frame, placeholder=messages[lang]['label_search'], color='gray')
+        self.entry_search_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.entry_search_left.config(font=(textfont, fontsize_textbox), takefocus=1)  # フォーカス可能にする
         self.entry_search_left.bind('<KeyRelease>', self.update_highlight_left)
         self.entry_search_left.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane) # 文字サイズ変更用
         self.entry_search_left.bind("<Button-2>", self.on_mouseclick_rightpane) # 文字サイズリセット用
-        self.entry_search_left.bind("<Return>", self.on_search_left_enter) # Enterキーで最初の候補へジャンプ
+        self.entry_search_left.bind("<Return>", self.on_search_left_enter) # Enterキーで次の候補へジャンプ
         for key in ["<Prior>", "<Page_Up>"]:
             self.entry_search_left.bind(key, self.on_tree_pageup)
         for key in ["<Next>", "<Page_Down>"]:
@@ -2103,24 +2112,59 @@ class PromptConstructorMain:
 
     def on_search_left_enter(self, event=None):
         # 検索欄でEnterキーが押されたときの処理
-        # 左ペインのツリーで、ハイライトされている最初のアイテムにジャンプする
+        # 左ペインのツリーで、ハイライトされているアイテムを順にジャンプする
         
+        # 検索欄(EntryWithPlaceholder自体)にフォーカスがない場合は無効化する
+        if self.root.focus_get() != self.entry_search_left:
+            return
+
         # Enterキー以外(ドラッグ中など)での誤動作防止
         if event is not None and event.keysym != "Return":
             return
 
+        # 下方向へナビゲート
+        self.on_search_left_nav("down")
+
+    def on_search_left_nav(self, direction):
+        # 左ペインの検索結果をナビゲートする（↑/↓ボタンまたはEnterキー）
         tree = self.get_current_tree()
         if not tree: return
 
-        # ツリーのルートから順に探索
-        for parent in tree.get_children():
-            # 子アイテムを探索
-            for child in tree.get_children(parent):
-                tags = tree.item(child, "tags")
-                if "hit" in tags:
-                    self.set_tree_selection(tree, child)
-                    self.text_box_top.focus() # 編集可能にするためフォーカス
-                    return
+        # 全てのヒットアイテムを取得（表示順、子アイテムのみ）
+        hit_items = []
+        def collect_hits(parent):
+            for item in tree.get_children(parent):
+                # 子アイテム(親を持つアイテム)かつハイライトされている場合のみ収集
+                if parent != "" and "hit" in tree.item(item, "tags"):
+                    hit_items.append(item)
+                collect_hits(item)
+        
+        collect_hits("")
+
+        if not hit_items:
+            return
+
+        # 現在の選択アイテムを特定
+        current_selection = tree.selection()
+        current_item = current_selection[0] if current_selection else None
+
+        # 次/前のインデックスを決定
+        if current_item in hit_items:
+            current_idx = hit_items.index(current_item)
+            if direction == "down":
+                target_idx = (current_idx + 1) % len(hit_items)
+            else:
+                target_idx = (current_idx - 1) % len(hit_items)
+        else:
+            # 現在の選択がヒットリストにない場合
+            if direction == "down":
+                target_idx = 0
+            else:
+                target_idx = len(hit_items) - 1
+
+        target_item = hit_items[target_idx]
+        self.set_tree_selection(tree, target_item)
+        self.text_box_top.focus() # 編集可能にするためフォーカス
 
     def on_tree_pageup(self, event=None):
         self.is_navigating_tree = True
