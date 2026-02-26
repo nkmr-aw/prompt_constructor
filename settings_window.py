@@ -33,12 +33,12 @@ class settings(tk.Toplevel):
 
         # 設定項目のフレーム
         settings_frame = tk.Frame(self)
-        settings_frame.pack(padx=10, pady=10)
+        settings_frame.pack(padx=10, pady=10, anchor='w')
 
 
         # 言語設定
-        lang_frame = tk.LabelFrame(settings_frame, text="")
-        lang_frame.pack(pady=5)
+        lang_frame = tk.Frame(settings_frame)
+        lang_frame.pack(pady=5, anchor='w')
         self.lang_var = tk.StringVar(value=config['Settings']['lang'])
         label = tk.Label(lang_frame, text="lang: ")
         label.pack(side=tk.LEFT)
@@ -49,8 +49,8 @@ class settings(tk.Toplevel):
 
 
         # インクリメント単位設定
-        increment_unit_frame = tk.LabelFrame(settings_frame, text="")
-        increment_unit_frame.pack(pady=5)
+        increment_unit_frame = tk.Frame(settings_frame)
+        increment_unit_frame.pack(pady=5, anchor='w')
         self.increment_unit_var = tk.StringVar(value=config['Settings']['increment_unit'])
         label = tk.Label(increment_unit_frame, text="increment_unit: ")
         label.pack(side=tk.LEFT)
@@ -61,8 +61,8 @@ class settings(tk.Toplevel):
 
 
         # ウィンドウ幅設定
-        window_width_frame = tk.LabelFrame(settings_frame, text="")
-        window_width_frame.pack(pady=5)
+        window_width_frame = tk.Frame(settings_frame)
+        window_width_frame.pack(pady=5, anchor='w')
         label = tk.Label(window_width_frame, text="window_width: ")
         label.pack(side=tk.LEFT)
         self.window_width_entry = tk.Entry(window_width_frame)
@@ -71,8 +71,8 @@ class settings(tk.Toplevel):
 
 
         # ウィンドウ高さ設定
-        window_height_frame = tk.LabelFrame(settings_frame, text="")
-        window_height_frame.pack(pady=5)
+        window_height_frame = tk.Frame(settings_frame)
+        window_height_frame.pack(pady=5, anchor='w')
         label = tk.Label(window_height_frame, text="window_height: ")
         label.pack(side=tk.LEFT)
         self.window_height_entry = tk.Entry(window_height_frame)
@@ -80,9 +80,19 @@ class settings(tk.Toplevel):
         self.window_height_entry.pack(side=tk.LEFT)
 
 
+        # 左ペイン幅設定
+        left_pane_width_frame = tk.Frame(settings_frame)
+        left_pane_width_frame.pack(pady=5, anchor='w')
+        label = tk.Label(left_pane_width_frame, text="left_pane_width: ")
+        label.pack(side=tk.LEFT)
+        self.left_pane_width_entry = tk.Entry(left_pane_width_frame)
+        self.left_pane_width_entry.insert(0, config['Settings']['left_pane_width'])
+        self.left_pane_width_entry.pack(side=tk.LEFT)
+
+
         # アイテム欄の表示行数設定
-        itemarea_displines_frame = tk.LabelFrame(settings_frame, text="")
-        itemarea_displines_frame.pack(pady=5)
+        itemarea_displines_frame = tk.Frame(settings_frame)
+        itemarea_displines_frame.pack(pady=5, anchor='w')
         label = tk.Label(itemarea_displines_frame, text="itemarea_displines: ")
         label.pack(side=tk.LEFT)
         self.itemarea_displines_entry = tk.Entry(itemarea_displines_frame)
@@ -91,8 +101,8 @@ class settings(tk.Toplevel):
 
 
         # マウスホイールによるスクロール行数設定
-        scroll_lines_frame = tk.LabelFrame(settings_frame, text="")
-        scroll_lines_frame.pack(pady=5)
+        scroll_lines_frame = tk.Frame(settings_frame)
+        scroll_lines_frame.pack(pady=5, anchor='w')
         label = tk.Label(scroll_lines_frame, text="scroll_lines: ")
         label.pack(side=tk.LEFT)
         self.scroll_lines_entry = tk.Entry(scroll_lines_frame)
@@ -101,8 +111,8 @@ class settings(tk.Toplevel):
 
 
         # メッセージ表示設定
-        messages_frame = tk.LabelFrame(settings_frame, text="")
-        messages_frame.pack(pady=5)
+        messages_frame = tk.Frame(settings_frame)
+        messages_frame.pack(pady=5, anchor='w')
         messages_var = tk.StringVar(value=config['Settings']['messages'])
         label = tk.Label(messages_frame, text="messages: ")
         label.pack(side=tk.LEFT)
@@ -113,8 +123,8 @@ class settings(tk.Toplevel):
 
 
         # 自動保存設定
-        autosave_json_frame = tk.LabelFrame(settings_frame, text="")
-        autosave_json_frame.pack(pady=5)
+        autosave_json_frame = tk.Frame(settings_frame)
+        autosave_json_frame.pack(pady=5, anchor='w')
         autosave_json_var = tk.StringVar(value=config['Settings']['autosave_json'])
         label = tk.Label(autosave_json_frame, text="autosave_json: ")
         label.pack(side=tk.LEFT)
@@ -125,8 +135,8 @@ class settings(tk.Toplevel):
 
 
         # バックアップ設定
-        backup_json_frame = tk.LabelFrame(settings_frame, text="")
-        backup_json_frame.pack(pady=5)
+        backup_json_frame = tk.Frame(settings_frame)
+        backup_json_frame.pack(pady=5, anchor='w')
         backup_json_var = tk.StringVar(value=config['Settings']['backup_json'])
         label = tk.Label(backup_json_frame, text="backup_json: ")
         label.pack(side=tk.LEFT)
@@ -140,8 +150,8 @@ class settings(tk.Toplevel):
         self.available_fonts += tkFont.families()
 
         # 表示フォント設定
-        textfont_frame = tk.LabelFrame(settings_frame, text="")
-        textfont_frame.pack(pady=5)
+        textfont_frame = tk.Frame(settings_frame)
+        textfont_frame.pack(pady=5, anchor='w')
         label = tk.Label(textfont_frame, text="textfont: ")
         label.pack(side=tk.LEFT)
         self.textfont_var = tk.StringVar(value=config['Settings']['textfont'])
@@ -155,8 +165,8 @@ class settings(tk.Toplevel):
 
 
         # ツリー表示のフォントサイズ設定
-        fontsize_treeview_frame = tk.LabelFrame(settings_frame, text="")
-        fontsize_treeview_frame.pack(pady=5)
+        fontsize_treeview_frame = tk.Frame(settings_frame)
+        fontsize_treeview_frame.pack(pady=5, anchor='w')
         label = tk.Label(fontsize_treeview_frame, text="fontsize_treeview: ")
         label.pack(side=tk.LEFT)
         self.fontsize_treeview_entry = tk.Entry(fontsize_treeview_frame)
@@ -165,8 +175,8 @@ class settings(tk.Toplevel):
 
 
         # テキストボックス表示のフォントサイズ設定
-        fontsize_textbox_frame = tk.LabelFrame(settings_frame, text="")
-        fontsize_textbox_frame.pack(pady=5)
+        fontsize_textbox_frame = tk.Frame(settings_frame)
+        fontsize_textbox_frame.pack(pady=5, anchor='w')
         label = tk.Label(fontsize_textbox_frame, text="fontsize_textbox: ")
         label.pack(side=tk.LEFT)
         self.fontsize_textbox_entry = tk.Entry(fontsize_textbox_frame)
@@ -175,8 +185,8 @@ class settings(tk.Toplevel):
 
 
         # 日時フォーマット設定
-        datetime_format_frame = tk.LabelFrame(settings_frame, text="")
-        datetime_format_frame.pack(pady=5)
+        datetime_format_frame = tk.Frame(settings_frame)
+        datetime_format_frame.pack(pady=5, anchor='w')
         label = tk.Label(datetime_format_frame, text="datetime_format: ")
         label.pack(side=tk.LEFT)
         self.datetime_format_entry = tk.Entry(datetime_format_frame)
@@ -185,8 +195,8 @@ class settings(tk.Toplevel):
 
 
         # 多重起動設定
-        multiple_boot_frame = tk.LabelFrame(settings_frame, text="")
-        multiple_boot_frame.pack(pady=5)
+        multiple_boot_frame = tk.Frame(settings_frame)
+        multiple_boot_frame.pack(pady=5, anchor='w')
         multiple_boot_var = tk.StringVar(value=config['Settings']['multiple_boot'])
         label = tk.Label(multiple_boot_frame, text="multiple_boot: ")
         label.pack(side=tk.LEFT)
@@ -194,6 +204,8 @@ class settings(tk.Toplevel):
         enable_radio.pack(side=tk.LEFT)
         disable_radio = tk.Radiobutton(multiple_boot_frame, text="disable", variable=multiple_boot_var, value="disable")
         disable_radio.pack(side=tk.LEFT)
+
+
 
 
         # デフォルトボタン
@@ -208,6 +220,8 @@ class settings(tk.Toplevel):
             self.window_width_entry.insert(0, "1000")
             self.window_height_entry.delete(0, tk.END)
             self.window_height_entry.insert(0, "600")
+            self.left_pane_width_entry.delete(0, tk.END)
+            self.left_pane_width_entry.insert(0, "300")
             self.itemarea_displines_entry.delete(0, tk.END)
             self.itemarea_displines_entry.insert(0, "5")
             self.scroll_lines_entry.delete(0, tk.END)
@@ -228,6 +242,7 @@ class settings(tk.Toplevel):
                     'increment_unit': float(self.increment_unit_var.get()),
                     'window_width': int(self.window_width_entry.get()),
                     'window_height': int(self.window_height_entry.get()),
+                    'left_pane_width': int(self.left_pane_width_entry.get()),
                     'itemarea_displines': int(self.itemarea_displines_entry.get()),
                     'scroll_lines': int(self.scroll_lines_entry.get()),
                     'messages': messages_var.get(),

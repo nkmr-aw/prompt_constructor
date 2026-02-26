@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.41"
+version = "1.0.42"
 
 
 # 言語設定の読み込み
@@ -26,6 +26,8 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'increment_unit': '0.05',  # 0.1単位か0.05単位のみ許可
         'window_width': '1000',  # 初期ウィンドウ幅
         'window_height': '600',   # 初期ウィンドウ高さ
+        'window_x': '100',
+        'window_y': '100',
         'itemarea_displines': '5',  # アイテム欄の表示行数(高さ)
         'scroll_lines': '3',  # マウスホイールによる単位スクロール行数
         'messages': 'enable',  # メッセージの表示(enable)と抑止(disable)
@@ -36,6 +38,7 @@ if not os.path.exists(settings_path):  # iniファイルがない場合はデフ
         'fontsize_textbox': '12',  # テキストボックス表示のフォントサイズ
         'datetime_format': '%%Y%%m%%d_%%H%%M%%S',  # '20240826_232125'のようなフォーマット(2024年8月26日 23時21分25秒の場合)
         'multiple_boot': 'disable',
+        'left_pane_width': '300',
     }
     with open(settings_path, 'w') as configfile:
         config.write(configfile)
@@ -56,6 +59,9 @@ else:  # iniファイルが既にある場合は読み込むが、設定値が�
         'increment_unit': '0.05',
         'window_width': '1000',
         'window_height': '600',
+        'window_x': '100',
+        'window_y': '100',
+        'left_pane_width': '300',
         'itemarea_displines': '5',
         'scroll_lines': '3',
         'messages': 'enable',
@@ -301,7 +307,9 @@ class PromptConstructorMain:
         root = tk.Tk()
         self.root = root
         self.root.title("Prompt Constructor v" + version)
-        self.root.geometry(f"{window_width}x{window_height}")
+        
+        # ウインドウ位置とサイズの復元
+        self.root.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}")
 
 
         # # プロンプト欄のカーソル位置を記憶する
@@ -334,7 +342,7 @@ class PromptConstructorMain:
 
         # 左ペイン (ツリービュー)
         self.left_frame = tk.Frame(self.paned_window)
-        self.paned_window.add(self.left_frame, width=300)
+        self.paned_window.add(self.left_frame, width=left_pane_width)
 
         # ボタンフレーム (左ペインの上部に配置)
         self.button_frame = tk.Frame(self.left_frame)
@@ -648,6 +656,9 @@ class PromptConstructorMain:
             'increment_unit': float(config['Settings']['increment_unit']),
             'window_width': int(config['Settings']['window_width']),
             'window_height': int(config['Settings']['window_height']),
+            'window_x': int(config['Settings'].get('window_x', 100)),
+            'window_y': int(config['Settings'].get('window_y', 100)),
+            'left_pane_width': int(config['Settings']['left_pane_width']),
             'itemarea_displines': int(config['Settings']['itemarea_displines']),
             'scroll_lines': int(config['Settings']['scroll_lines']),
             'messages': config['Settings']['messages'],
@@ -667,14 +678,17 @@ class PromptConstructorMain:
             sys.exit(1)
 
         # サニタイズと変数への代入
-        global lang, increment_unit, window_width, window_height, itemarea_displines, scroll_lines
+        global lang, increment_unit, window_width, window_height, window_x, window_y, itemarea_displines, scroll_lines
         global messages_enabled, autosave_json_enabled, backup_json, textfont
-        global fontsize_treeview, fontsize_textbox, datetime_format, multiple_boot
+        global fontsize_treeview, fontsize_textbox, datetime_format, multiple_boot, left_pane_width
 
         lang = sanitize_input(settings['lang'], 'str')
         increment_unit = sanitize_input(settings['increment_unit'], 'float')
         window_width = sanitize_input(settings['window_width'], 'int')
         window_height = sanitize_input(settings['window_height'], 'int')
+        window_x = sanitize_input(settings['window_x'], 'int')
+        window_y = sanitize_input(settings['window_y'], 'int')
+        left_pane_width = sanitize_input(settings['left_pane_width'], 'int')
         itemarea_displines = sanitize_input(settings['itemarea_displines'], 'int')
         scroll_lines = sanitize_input(settings['scroll_lines'], 'int')
         messages_enabled = sanitize_input(settings['messages'], 'bool')
@@ -2521,12 +2535,39 @@ class PromptConstructorMain:
         self.autosave_json_var.set(autosave_json_enabled)
 
 
+    def save_settings(self):
+        """現在のウインドウ位置とサイズを設定ファイルに保存する"""
+        try:
+            # 現在のジオメトリを取得 (widthxheight+x+y)
+            geometry = self.root.geometry()
+            match = re.match(r"(\d+)x(\d+)\+(-?\d+)\+(-?\d+)", geometry)
+            if match:
+                width, height, x, y = match.groups()
+                
+                config.read(settings_path)
+                if 'Settings' not in config:
+                    config['Settings'] = {}
+                
+                config['Settings']['window_width'] = width
+                config['Settings']['window_height'] = height
+                config['Settings']['window_x'] = x
+                config['Settings']['window_y'] = y
+                
+                with open(settings_path, 'w') as configfile:
+                    config.write(configfile)
+        except Exception as e:
+            print(f"Failed to save settings: {e}")
+
+
     def on_exit(self, event=None):
         if not autosave_json_enabled:
             result = messagebox.askokcancel(messages[lang]['title_exit_confirm'], messages[lang]['message_autosave_disabled_confirm'])
             if result:
                 # プロンプト欄が空でもtmpファイル作る
                 self.save_prompt_and_close()
+
+                # ウインドウ位置保存
+                self.save_settings()
 
                 self.root.destroy()
             else:
@@ -2537,6 +2578,10 @@ class PromptConstructorMain:
 
             # 空でもtmpファイル作る
             self.save_prompt_and_close()
+
+            # ウインドウ位置保存
+            self.save_settings()
+
             self.root.destroy()
 
 

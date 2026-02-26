@@ -30,8 +30,11 @@ def validate_settings(settings):
     schema = {
         'lang': {'type': 'string', 'allowed': ['en', 'ja'], 'required': True},
         'increment_unit': {'type': 'float', 'allowed': [0.05, 0.1], 'required': True},
-        'window_width': {'type': 'integer', 'min': 1, 'required': True},
-        'window_height': {'type': 'integer', 'min': 1, 'required': True},
+        'window_width': {'type': 'integer', 'min': 100, 'required': True},
+        'window_height': {'type': 'integer', 'min': 100, 'required': True},
+        'window_x': {'type': 'integer', 'required': True},
+        'window_y': {'type': 'integer', 'required': True},
+        'left_pane_width': {'type': 'integer', 'min': 100, 'max': 1000, 'required': True},
         'itemarea_displines': {'type': 'integer', 'min': 1, 'max': 20, 'required': True},
         'scroll_lines': {'type': 'integer', 'min': 1, 'max': 20, 'required': True},
         'messages': {'type': 'string', 'allowed': ['enable', 'disable'], 'required': True},
@@ -49,6 +52,3 @@ def validate_settings(settings):
         return True, {}
     else:
         return False, validator.errors
-
-
-
