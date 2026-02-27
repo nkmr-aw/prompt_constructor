@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.43"
+version = "1.0.44"
 
 
 # 言語設定の読み込み
@@ -1012,10 +1012,7 @@ class PromptConstructorMain:
     # ツリーアイテムを左クリックで選択したときの動作
     def on_tree_item_press(self, event):
         tree = event.widget
-        # 展開/折りたたみボタン(+)をクリックした場合は、標準の動作に任せる
-        if tree.identify_element(event.x, event.y) == 'disclosure':
-            return
-            
+        
         item = tree.identify_row(event.y)
         self.drag_data = {"x": event.x, "y": event.y, "item": item, "tree": tree}
         self.is_dragging = True  # ドラッグ開始時に is_dragging を True に設定
@@ -1031,6 +1028,13 @@ class PromptConstructorMain:
             self.drag_items = selected_items
             # ShiftやCtrlが押されていない場合は、標準の選択動作（他を解除してこれだけにする）を抑制
             if not (event.state & 0x0001 or event.state & 0x0004): # 0x0001: Shift, 0x0004: Control
+                # ただし、展開ボタン(+)エリアをクリックした場合は抑制(break)せず、標準の展開動作に任せる
+                # identify_region=='tree' かつ 要素が text/image 以外であれば展開指示とみなす
+                region = tree.identify_region(event.x, event.y)
+                element = tree.identify_element(event.x, event.y)
+                if region == 'tree' and element not in ['text', 'image']:
+                    return
+                
                 tree.focus(item)
                 return "break"
         else:
@@ -1116,8 +1120,10 @@ class PromptConstructorMain:
 
     def on_tree_item_release(self, event):
         tree = event.widget
-        # 展開/折りたたみボタン(+)をクリックした場合は、アイテムの追加処理を行わない
-        if tree.identify_element(event.x, event.y) == 'disclosure':
+        # 展開/折りたたみボタン(+)エリアをクリックした場合は、アイテムの追加処理を行わない
+        region = tree.identify_region(event.x, event.y)
+        element = tree.identify_element(event.x, event.y)
+        if region == 'tree' and element not in ['text', 'image']:
             return
 
         # ドラッグ終了時のイベント処理
