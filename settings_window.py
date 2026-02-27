@@ -253,6 +253,8 @@ class settings(tk.Toplevel):
                     'fontsize_textbox': int(self.fontsize_textbox_entry.get()),
                     'datetime_format': self.datetime_format_entry.get().replace('%', '%%'),
                     'multiple_boot': multiple_boot_var.get(),
+                    'window_x': self.parent.root.winfo_x(),
+                    'window_y': self.parent.root.winfo_y(),
                 }
 
                 is_valid, errors = validate_settings(settings)

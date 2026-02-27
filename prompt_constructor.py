@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.42"
+version = "1.0.43"
 
 
 # 言語設定の読み込み
@@ -1012,6 +1012,10 @@ class PromptConstructorMain:
     # ツリーアイテムを左クリックで選択したときの動作
     def on_tree_item_press(self, event):
         tree = event.widget
+        # 展開/折りたたみボタン(+)をクリックした場合は、標準の動作に任せる
+        if tree.identify_element(event.x, event.y) == 'disclosure':
+            return
+            
         item = tree.identify_row(event.y)
         self.drag_data = {"x": event.x, "y": event.y, "item": item, "tree": tree}
         self.is_dragging = True  # ドラッグ開始時に is_dragging を True に設定
@@ -1111,6 +1115,11 @@ class PromptConstructorMain:
 
 
     def on_tree_item_release(self, event):
+        tree = event.widget
+        # 展開/折りたたみボタン(+)をクリックした場合は、アイテムの追加処理を行わない
+        if tree.identify_element(event.x, event.y) == 'disclosure':
+            return
+
         # ドラッグ終了時のイベント処理
         if "item" in self.drag_data and self.drag_data["item"]:
             # ドラッグ移動の有無を判定
