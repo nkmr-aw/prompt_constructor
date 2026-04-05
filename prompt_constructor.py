@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.45"
+version = "1.0.46"
 
 
 # 言語設定の読み込み
@@ -513,11 +513,23 @@ class PromptConstructorMain:
         self.text_box_bottom.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
         self.text_box_bottom.focus()
         
-        # 検索欄
-        self.text_box_search = EntryWithPlaceholder(self.right_frame_bottom, placeholder=messages[lang]['label_search'], color='gray')
-        self.text_box_search.pack(fill=tk.BOTH, padx=5, pady=5)
+        # 検索欄フレーム（検索入力欄 + ナビゲーションボタン）
+        self.search_right_frame = tk.Frame(self.right_frame_bottom)
+        self.search_right_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        # 検索ナビゲーションボタン (先に右側に配置することで幅を維持させる)
+        self.button_search_right_down = tk.Button(self.search_right_frame, text="↓", width=3, command=lambda: self.on_search_right_nav("down"))
+        self.button_search_right_down.pack(side=tk.RIGHT, padx=(2, 0))
+        self.button_search_right_up = tk.Button(self.search_right_frame, text="↑", width=3, command=lambda: self.on_search_right_nav("up"))
+        self.button_search_right_up.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.text_box_search = EntryWithPlaceholder(self.search_right_frame, placeholder=messages[lang]['label_search'], color='gray')
+        self.text_box_search.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.text_box_search.config(state=tk.NORMAL)  # テキストボックスの編集状態を初期化
         self.text_box_search.config(font=(textfont, fontsize_textbox), takefocus=0)  # システムフォントを使用
+
+        # 右ペイン検索の現在ハイライトインデックス (-1は未選択)
+        self.right_search_current_index = 0
 
         # イベントバインド
         # self.text_box_search.bind("<<Modified>>", self.on_entry_change)
@@ -736,10 +748,22 @@ class PromptConstructorMain:
 
 
     def focus_search_box(self, event=None):
-        # Ctrl+Fを押したときにtext_box_searchにフォーカスを移し、
-        # text_box_search内のテキストを全範囲選択
-        self.text_box_search.focus_set()  # text_box_searchにフォーカス
-        self.text_box_search.select_range(0, tk.END)  # テキストを全範囲選択
+        # Ctrl+Fを押すたびに左ペイン検索欄と右ペイン検索欄を交互に切り替える
+        # 現在フォーカスされているウィジェットを取得
+        focused = self.root.focus_get()
+
+        if focused == self.entry_search_left:
+            # 左ペイン検索欄にフォーカスがある → 右ペイン検索欄へ
+            self.text_box_search.focus_set()
+            self.text_box_search.select_range(0, tk.END)
+        elif focused == self.text_box_search:
+            # 右ペイン検索欄にフォーカスがある → 左ペイン検索欄へ
+            self.entry_search_left.focus_set()
+            self.entry_search_left.select_range(0, tk.END)
+        else:
+            # どちらの検索欄にもフォーカスがない → まず左ペイン検索欄へ
+            self.entry_search_left.focus_set()
+            self.entry_search_left.select_range(0, tk.END)
         return "break"  # イベントの伝播を停止
 
 
@@ -1833,6 +1857,7 @@ class PromptConstructorMain:
         if not input_text:
             for widget in text_widgets:
                 widget.tag_remove("highlight", "1.0", tk.END)
+                widget.tag_remove("current_highlight", "1.0", tk.END)
                 widget.tag_remove("selected", "1.0", tk.END)
                 widget.tag_remove("selected_highlight", "1.0", tk.END)
             return
@@ -1844,6 +1869,7 @@ class PromptConstructorMain:
             if not input_text:
                 for widget in text_widgets:
                     widget.tag_remove("highlight", "1.0", tk.END)
+                    widget.tag_remove("current_highlight", "1.0", tk.END)
                     widget.tag_remove("selected", "1.0", tk.END)
                     widget.tag_remove("selected_highlight", "1.0", tk.END)
                 return
@@ -1855,6 +1881,7 @@ class PromptConstructorMain:
 
             # すべてのタグを削除
             widget.tag_remove("highlight", "1.0", tk.END)
+            widget.tag_remove("current_highlight", "1.0", tk.END)
             widget.tag_remove("selected", "1.0", tk.END)
             widget.tag_remove("selected_highlight", "1.0", tk.END)
 
@@ -1905,18 +1932,31 @@ class PromptConstructorMain:
             widget.tag_raise("selected_highlight", "selected")
 
             widget.tag_config("highlight", background="yellow", foreground="black")
+            widget.tag_config("current_highlight", background="red", foreground="white")
             widget.tag_config("selected", background="SystemHighlight", foreground="SystemHighlightText")
             widget.tag_config("selected_highlight", background="red", foreground="white")
+            widget.tag_raise("current_highlight", "highlight")
 
         # イベント処理後に更新を確実に行うため、afterメソッドを使用
         if runner <= 0:
             self.after_id = self.root.after(1, self.delayed_update_highlight, runner)
 
-        # Enterキーが押された場合のみ、検索一致部分を範囲選択
-        if event is not None and event.keysym == "Return":
-            search_text = self.text_box_search.get()
-            if search_text:
-                self.select_search_match(search_text)
+        # (Enterキーの処理は最後に移動した)
+
+        # 検索テキスト変更時にcurrent_highlightインデックスをリセットする
+        if not hasattr(self, 'last_right_search_text'):
+            self.last_right_search_text = ""
+        if input_text != self.last_right_search_text:
+            self.right_search_current_index = 0
+            self.last_right_search_text = input_text
+
+        # 常に現在のハイライトを適用する（delayed_update_highlightでも消えないように）
+        if input_text:
+            self._apply_current_highlight()
+
+        # Enterキーが押された場合は、対象箇所（または最後尾）にカーソルを移動
+        if event is not None and event.keysym == "Return" and event.widget == self.text_box_search:
+            self.goto_search_match()
 
 
     def delayed_update_highlight(self, runner):
@@ -1937,24 +1977,63 @@ class PromptConstructorMain:
         pass
 
 
-    def select_search_match(self, search_text):
-        # text_box_bottom内のテキストを取得
-        text_content = self.text_box_bottom.get("1.0", tk.END)
+    def _get_highlight_ranges_in_bottom(self):
+        """text_box_bottom内のhighlightタグ付き範囲をリストで返す"""
+        ranges = self.text_box_bottom.tag_ranges("highlight")
+        result = []
+        for i in range(0, len(ranges), 2):
+            result.append((str(ranges[i]), str(ranges[i + 1])))
+        return result
 
-        # 検索文字列の開始位置を取得
-        start_index = text_content.find(search_text)
+    def _apply_current_highlight(self):
+        """text_box_bottom内のhighlightタグ付き範囲のうち、
+        現在のインデックスに対応する箇所にcurrent_highlightタグを付与する"""
+        self.text_box_bottom.tag_remove("current_highlight", "1.0", tk.END)
+        matches = self._get_highlight_ranges_in_bottom()
+        if not matches:
+            return
+        # インデックスを範囲内にクランプ
+        self.right_search_current_index = self.right_search_current_index % len(matches)
+        start, end = matches[self.right_search_current_index]
+        self.text_box_bottom.tag_add("current_highlight", start, end)
+        self.text_box_bottom.tag_raise("current_highlight", "highlight")
+        self.text_box_bottom.see(start)
 
-        # 検索文字列が見つかった場合
-        if start_index != -1:
-            # 検索文字列の終了位置を計算
-            end_index = start_index + len(search_text)
+    def on_search_right_nav(self, direction):
+        """右ペイン検索のナビゲーション（↑/↓ボタン）"""
+        matches = self._get_highlight_ranges_in_bottom()
+        if not matches:
+            return
 
-            # 検索文字列を範囲選択
-            self.text_box_bottom.tag_remove(tk.SEL, "1.0", tk.END)
-            self.text_box_bottom.tag_add(tk.SEL, f"1.0+{start_index}c", f"1.0+{end_index}c")
+        # ナビゲーション時は選択状態(tk.SEL)を解除して赤ハイライトの重複を防ぐ
+        self.text_box_bottom.tag_remove(tk.SEL, "1.0", tk.END)
+        self.text_box_bottom.tag_remove("selected_highlight", "1.0", tk.END)
 
-            # 範囲選択部分が見えるようにスクロール
-            self.text_box_bottom.see(f"1.0+{start_index}c")
+        if direction == "down":
+            self.right_search_current_index = (self.right_search_current_index + 1) % len(matches)
+        else:
+            self.right_search_current_index = (self.right_search_current_index - 1) % len(matches)
+        self._apply_current_highlight()
+
+    def goto_search_match(self):
+        """Enterキーが押されたとき、現在の検索ハイライトの末尾にカーソルを移動する。
+        検索結果がない場合はテキストの最後尾に移動する。"""
+        self.text_box_bottom.focus_set()
+        
+        # 不要な選択状態を解除
+        self.text_box_bottom.tag_remove(tk.SEL, "1.0", tk.END)
+        self.text_box_bottom.tag_remove("selected_highlight", "1.0", tk.END)
+
+        ranges = self.text_box_bottom.tag_ranges("current_highlight")
+        if ranges:
+            # current_highlightタグの2要素目（インデックス）が範囲の末尾
+            end_index = ranges[-1]
+            self.text_box_bottom.mark_set(tk.INSERT, end_index)
+            self.text_box_bottom.see(end_index)
+        else:
+            # 検索結果がない場合はテキスト全体の最後尾へ
+            self.text_box_bottom.mark_set(tk.INSERT, tk.END)
+            self.text_box_bottom.see(tk.END)
 
 
     def ensure_prompt_files_exist(self):
