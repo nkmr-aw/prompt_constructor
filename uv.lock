@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.14"
 
 [options]
-exclude-newer = "2026-03-29T08:17:16.6624209Z"
+exclude-newer = "2026-04-13T11:38:36.7271971Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -17,7 +17,7 @@ wheels = [
 
 [[package]]
 name = "prompt-constructor"
-version = "1.0.46"
+version = "1.0.47"
 source = { virtual = "." }
 dependencies = [
     { name = "cerberus" },
