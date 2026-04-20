@@ -14,7 +14,7 @@ from settings_window import settings, cleanup_ini_file
 from check_settings import validate_settings, sanitize_input
 
 
-version = "1.0.46"
+version = "1.0.47"
 
 
 # 言語設定の読み込み
@@ -607,7 +607,7 @@ class PromptConstructorMain:
         self.entry_search_left = EntryWithPlaceholder(self.search_left_frame, placeholder=messages[lang]['label_search'], color='gray')
         self.entry_search_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry_search_left.config(font=(textfont, fontsize_textbox), takefocus=1)  # フォーカス可能にする
-        self.entry_search_left.bind('<KeyRelease>', self.update_highlight_left)
+        self.entry_search_left.bind('<KeyRelease>', lambda e: self.update_highlight_left(event=e, auto_expand=True))
         self.entry_search_left.bind("<Shift-MouseWheel>", self.on_mousewheel_rightpane) # 文字サイズ変更用
         self.entry_search_left.bind("<Button-2>", self.on_mouseclick_rightpane) # 文字サイズリセット用
         self.entry_search_left.bind("<Return>", self.on_search_left_enter) # Enterキーで次の候補へジャンプ
@@ -2164,7 +2164,7 @@ class PromptConstructorMain:
             messagebox.showerror(messages[lang]['title_save_json_error'], messages[lang]['message_save_json_notcomplete'] + str(e))
 
 
-    def update_highlight_left(self, event=None):
+    def update_highlight_left(self, event=None, auto_expand=False):
         if not hasattr(self, 'entry_search_left'):
             return
 
@@ -2210,10 +2210,12 @@ class PromptConstructorMain:
             # 親アイテムのハイライト設定
             if hit_children_count >= 2:
                 tree.item(parent, tags=("hit_dark",))
-                tree.item(parent, open=True) # ヒットしたら展開する
+                if auto_expand:
+                    tree.item(parent, open=True) # ヒットしたら展開する
             elif hit_children_count == 1:
                 tree.item(parent, tags=("hit",))
-                tree.item(parent, open=True) # ヒットしたら展開する
+                if auto_expand:
+                    tree.item(parent, open=True) # ヒットしたら展開する
             else:
                 tree.item(parent, tags=())
 
@@ -2235,6 +2237,9 @@ class PromptConstructorMain:
 
     def on_search_left_nav(self, direction):
         # 左ペインの検索結果をナビゲートする（↑/↓ボタンまたはEnterキー）
+        # ナビゲーション時はハイライト＋自動展開を実行する
+        self.update_highlight_left(auto_expand=True)
+
         tree = self.get_current_tree()
         if not tree: return
 
